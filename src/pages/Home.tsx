@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button"
 import FeatureCard from "@/components/ui/shared/FeatureCard"
 import { Dumbbell, Zap, TrendingUp } from "lucide-react" 
+import { useNavigate } from "react-router-dom"
 
 export default function Home() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-3xl space-y-8">
@@ -19,7 +22,11 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-          <Button size="lg" className="h-16 px-10 text-xl rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all hover:scale-105">
+          <Button 
+            size="lg"
+            className="h-16 px-10 text-xl rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all hover:scale-105"
+            onClick={() => navigate("/onboarding")}
+          >
             Начать проект
           </Button>
         </div>
