@@ -5,6 +5,9 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "noEmit": true,
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
