@@ -41,7 +41,7 @@ export default function Onboarding() {
     "text-sm font-medium flex items-center gap-2 text-slate-600";
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white p-4">
+    <div className="flex items-center justify-center min-h-screen bg-white p-4 ">
       <Card className="w-full max-w-md border-none shadow-2xl rounded-3xl overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-2xl font-bold text-center text-slate-800">
@@ -49,8 +49,9 @@ export default function Onboarding() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
+
           {/* ИМЯ И ПОЛ */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className={labelStyles}>
                 <User className="w-4 h-4 text-blue-500" /> Имя
@@ -123,7 +124,7 @@ export default function Onboarding() {
           </div>
 
           {/* ВЕС, РОСТ, ВОЗРАСТ */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className={labelStyles}>
                 <Scale className="w-4 h-4 text-green-500" /> Вес (кг)
