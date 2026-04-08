@@ -22,29 +22,88 @@ export default function Onboarding() {
     level: "",
   });
 
-  const handleFinish = () => {
-    const isFormValid = Object.values(formData).every((value) => value !== "");
-
-    if (!isFormValid) {
-      alert("Пожалуйста, заполни все поля!");
-      return;
-    }
-
-    console.log("Данные профиля:", formData);
-    localStorage.setItem("user_profile", JSON.stringify(formData));
-    alert("Профиль создан!");
-  };
+  type FieldName = keyof typeof formData;
+  const [glowFields, setGlowFields] = useState<FieldName[]>([]);
 
   const fieldStyles =
     "w-full rounded-xl bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-blue-400";
   const labelStyles =
-    "text-sm font-medium flex items-center gap-2 text-slate-600";
+    "text-sm font-medium flex items-center gap-2 text-slate-600 select-none";
+
+  const isInvalid: Record<FieldName, (value: string) => boolean> = {
+    name: (v) => v.trim().length < 2,
+    gender: (v) => !v,
+    age: (v) => {
+      if (!v) return true;
+      const n = Number(v);
+      return !Number.isFinite(n) || n < 14 || n > 100;
+    },
+    weight: (v) => {
+      if (!v) return true;
+      const n = Number(v);
+      return !Number.isFinite(n) || n < 30 || n > 300;
+    },
+    height: (v) => {
+      if (!v) return true;
+      const n = Number(v);
+      return !Number.isFinite(n) || n < 100 || n > 250;
+    },
+    level: (v) => !v,
+  };
+
+  const getInvalidFields = () => {
+    const invalid: FieldName[] = [];
+    (Object.keys(formData) as FieldName[]).forEach((field) => {
+      if (isInvalid[field](formData[field])) invalid.push(field);
+    });
+    return invalid;
+  };
+
+  const triggerGlow = (fields: FieldName[]) => {
+    setGlowFields([]);
+    window.requestAnimationFrame(() => {
+      setGlowFields(fields);
+      window.setTimeout(() => setGlowFields([]), 650);
+    });
+  };
+
+  const getFieldClass = (fieldName: FieldName) => {
+    const shouldGlow = glowFields.includes(fieldName);
+    return [
+      fieldStyles,
+      "transition-[box-shadow,background-color] duration-200",
+      "ring-0 bg-slate-50",
+      shouldGlow ? "pf-error-glow" : "",
+    ].join(" ");
+  };
+
+  const handleFinish = () => {
+    const invalidFields = getInvalidFields();
+
+    if (invalidFields.length > 0) {
+      triggerGlow(invalidFields);
+      return;
+    }
+
+    console.log("Данные готовы:", formData);
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-white p-4 ">
+      <style>{`
+        @keyframes pfErrorGlow {
+          0% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+          55% { box-shadow: 0 0 0 1px rgba(239, 68, 68, 1), 0 0 4px rgba(239, 68, 68, 1); }
+          100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .pf-error-glow {
+          animation: pfErrorGlow 0.8s ease-out 0s 1;
+        }
+      `}</style>
+
       <Card className="w-full max-w-md border-none shadow-2xl rounded-3xl overflow-hidden">
         <CardHeader className="pb-2">
-          <CardTitle className="text-2xl font-bold text-center text-slate-800">
+          <CardTitle className="text-2xl font-bold text-center text-slate-800 select-none">
             Расскажи о себе
           </CardTitle>
         </CardHeader>
@@ -59,10 +118,11 @@ export default function Onboarding() {
               <Input
                 placeholder="Как тебя зовут?"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className={fieldStyles}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({ ...prev, name: value }));
+                }}
+                className={getFieldClass("name")}
               />
             </div>
 
@@ -71,11 +131,14 @@ export default function Onboarding() {
                 <Users className="w-4 h-4 text-pink-500" /> Пол
               </label>
               <RadioGroup
-                defaultValue={formData.gender}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, gender: value })
-                }
-                className="flex gap-4 pt-1"
+                value={formData.gender}
+                onValueChange={(value) => {
+                  setFormData((prev) => ({ ...prev, gender: value }));
+                }}
+                className={[
+                  "flex gap-4 rounded-xl p-1.5 -m-1",
+                  glowFields.includes("gender") ? "pf-error-glow" : "",
+                ].join(" ")}
               >
                 <div className="flex items-center space-x-2 cursor-pointer">
                   <RadioGroupItem
@@ -89,7 +152,7 @@ export default function Onboarding() {
                   />
                   <label
                     htmlFor="male"
-                    className={`text-sm font-medium cursor-pointer transition-colors ${
+                    className={`text-sm font-medium cursor-pointer transition-colors select-none ${
                       formData.gender === "male"
                         ? "text-blue-500"
                         : "text-slate-600"
@@ -110,7 +173,7 @@ export default function Onboarding() {
                   />
                   <label
                     htmlFor="female"
-                    className={`text-sm font-medium cursor-pointer transition-colors ${
+                    className={`text-sm font-medium cursor-pointer transition-colors select-none ${
                       formData.gender === "female"
                         ? "text-pink-500"
                         : "text-slate-600"
@@ -131,12 +194,15 @@ export default function Onboarding() {
               </label>
               <Input
                 type="number"
-                placeholder="70"
+                min="30"
+                max="300"
+                placeholder="30-300"
                 value={formData.weight}
-                onChange={(e) =>
-                  setFormData({ ...formData, weight: e.target.value })
-                }
-                className={fieldStyles}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({ ...prev, weight: value }));
+                }}
+                className={getFieldClass("weight")}
               />
             </div>
 
@@ -146,12 +212,15 @@ export default function Onboarding() {
               </label>
               <Input
                 type="number"
-                placeholder="180"
+                min="100"
+                max="250"
+                placeholder="100-250"
                 value={formData.height}
-                onChange={(e) =>
-                  setFormData({ ...formData, height: e.target.value })
-                }
-                className={fieldStyles}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({ ...prev, height: value }));
+                }}
+                className={getFieldClass("height")}
               />
             </div>
 
@@ -161,12 +230,15 @@ export default function Onboarding() {
               </label>
               <Input
                 type="number"
-                placeholder="25"
+                min="14"
+                max="100"
+                placeholder="14-100"
                 value={formData.age}
-                onChange={(e) =>
-                  setFormData({ ...formData, age: e.target.value })
-                }
-                className={fieldStyles}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({ ...prev, age: value }));
+                }}
+                className={getFieldClass("age")}
               />
             </div>
           </div>
@@ -177,11 +249,12 @@ export default function Onboarding() {
               <Dumbbell className="w-4 h-4 text-slate-700" /> Уровень подготовки
             </label>
             <Select
-              onValueChange={(value) =>
-                setFormData({ ...formData, level: value })
-              }
+              value={formData.level}
+              onValueChange={(value) => {
+                setFormData((prev) => ({ ...prev, level: value }));
+              }}
             >
-              <SelectTrigger className={fieldStyles}>
+              <SelectTrigger className={getFieldClass("level")}>
                 <SelectValue placeholder="Ваш спортивный опыт" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-none shadow-lg">
