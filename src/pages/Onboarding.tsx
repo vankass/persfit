@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Scale, Ruler, Baby, Users, Dumbbell } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { getProfile, saveProfile } from "@/lib/db";
 
 export default function Onboarding() {
   const [formData, setFormData] = useState({
@@ -77,7 +78,7 @@ export default function Onboarding() {
     ].join(" ");
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const invalidFields = getInvalidFields();
 
     if (invalidFields.length > 0) {
@@ -85,7 +86,20 @@ export default function Onboarding() {
       return;
     }
 
-    console.log("Данные готовы:", formData);
+    try {
+      await saveProfile({
+        ...formData,
+        age: Number(formData.age),
+        weight: Number(formData.weight),
+        height: Number(formData.height),
+        createdAt: new Date().toISOString(),
+      });
+
+      console.log("Данные успешно сохранены в IDB");
+      console.log(getProfile());
+    } catch (error) {
+      console.error("Ошибка сохранения:", error);
+    }
   };
 
   return (
