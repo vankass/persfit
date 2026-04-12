@@ -12,8 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Scale, Ruler, Baby, Users, Dumbbell } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { getProfile, saveProfile } from "@/lib/db";
+import { useNavigate } from "react-router-dom";
 
 export default function Onboarding() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     gender: "",
@@ -100,6 +103,8 @@ export default function Onboarding() {
     } catch (error) {
       console.error("Ошибка сохранения:", error);
     }
+
+    navigate("/dashboard");
   };
 
   return (

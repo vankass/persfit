@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom"
 
 export default function Home() {
   const navigate = useNavigate();
-
+  
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-3xl space-y-8">
