@@ -14,7 +14,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { getProfile, saveProfile } from "@/lib/db";
 import { useNavigate } from "react-router-dom";
 
-export default function Onboarding() {
+interface OnboardingProps {
+  onComplete: () => Promise<void>;
+}
+
+export default function Onboarding({ onComplete }: OnboardingProps) {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -104,6 +108,7 @@ export default function Onboarding() {
       console.error("Ошибка сохранения:", error);
     }
 
+    await onComplete();
     navigate("/dashboard");
   };
 

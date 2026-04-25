@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -9,13 +9,23 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
 
+  const refreshProfileStatus = async () => {
+    const profile = await getProfile();
+    if (profile) setHasProfile(true);
+  };
+
   useEffect(() => {
-    const checkUser = async () => {
+    let isMounted = true;
+
+    (async () => {
       const profile = await getProfile();
-      if (profile) setHasProfile(true);
-      setIsReady(true);
-    };
-    checkUser();
+      if (isMounted) {
+        if (profile) setHasProfile(true);
+        setIsReady(true);
+      }
+    })();
+
+    return () => { isMounted = false; };
   }, []);
 
   if (!isReady) {
@@ -28,9 +38,9 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={hasProfile ? <Dashboard /> : <Home />} />
-      <Route path="/onboarding" element={<Onboarding />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/" element={hasProfile ? <Navigate to="/dashboard" /> : <Home />} />
+      <Route path="/onboarding" element={hasProfile ? <Navigate to="/dashboard"/> : <Onboarding onComplete={refreshProfileStatus}/>} />
+      <Route path="/dashboard" element={hasProfile ? <Dashboard /> : <Navigate to="/onboarding" />} />
     </Routes>
   );
 }
