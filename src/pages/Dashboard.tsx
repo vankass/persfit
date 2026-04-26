@@ -19,6 +19,7 @@ import {
   Timer,
   Target,
   LucideActivity,
+  FileChartColumn,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -228,14 +229,11 @@ export default function Dashboard() {
 
 function NavLinks({ mobile = false }: { mobile?: boolean }) {
   const links = [
-    {
-      name: "Главная",
-      icon: <LayoutDashboard className="w-4 h-4" />,
-      active: true,
-    },
+    { name: "Главная", icon: <LayoutDashboard className="w-4 h-4" />, active: true,},
     { name: "Генератор", icon: <Sparkles className="w-4 h-4" /> },
     { name: "Каталог", icon: <BookOpen className="w-4 h-4" /> },
     { name: "История", icon: <History className="w-4 h-4" /> },
+    { name: "Статистика", icon: <FileChartColumn className="w-4 h-4" /> },
   ];
 
   return (
