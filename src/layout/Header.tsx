@@ -57,14 +57,14 @@ function Header({ user }: HeaderProps) {
   );
 
   return (
-    <header className="max-w-7xl mx-auto flex items-center justify-between mb-6 md:mb-10 relative">
+    <header className="max-w-8xl mx-auto flex items-center justify-between mb-5 relative">
       <div className="shrink-0 flex items-center">
         <h1 className="text-3xl md:text-4xl font-black tracking-tighter select-none">
           Pers<span className="text-blue-600">Fit</span>
         </h1>
       </div>
 
-      <nav className="hidden lg:flex items-center gap-2 bg-white/50 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm">
+      <nav className="hidden lg:flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm">
         {links.map((link) => (
           <NavLink
             key={link.to}
@@ -75,7 +75,7 @@ function Header({ user }: HeaderProps) {
                 "flex items-center gap-2 rounded-xl text-sm font-bold transition-all px-5 py-2.5",
                 isActive
                   ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50/50",
+                  : "text-slate-500 hover:text-slate-900",
               ].join(" ")
             }
           >
@@ -86,18 +86,18 @@ function Header({ user }: HeaderProps) {
       </nav>
 
       <div className="flex items-center gap-3">
-        <div className="bg-white/50 p-1.5 rounded-2xl border border-slate-200/50 backdrop-blur-sm hidden sm:block">
+        <div className="rounded-2xl backdrop-blur-sm hidden sm:block">
           <Button
             variant="ghost"
-            className="flex items-center gap-2 px-3 py-2 h-auto hover:bg-white rounded-xl transition-all hover:shadow-sm"
+            className="flex items-center gap-2 px-4 py-3 h-auto bg-white rounded-2xl transition-all hover:bg-white border border-slate-200/50"
             onClick={() => navigate("/profile")}
           >
-            <span className="text-sm font-bold text-slate-700">
+            <span className="text-sm font-bold text-slate-900">
               {user?.name || "Профиль"}
             </span>
-            <div className="flex items-center justify-center bg-slate-100 p-1.5 rounded-lg">
+            <div className="flex items-center justify-center p-1.5 rounded-lg ">
               <UserRound
-                className={`w-4 h-4 ${
+                className={`w-4 h-4  ${
                   user?.gender === "male" ? "text-blue-600" : "text-pink-500"
                 }`}
               />
