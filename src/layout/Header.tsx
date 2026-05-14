@@ -59,7 +59,7 @@ function Header({ user }: HeaderProps) {
   return (
     <header className="max-w-8xl mx-auto flex items-center justify-between mb-5 relative">
       <div className="shrink-0 flex items-center">
-        <h1 className="text-3xl md:text-4xl font-black tracking-tighter select-none">
+        <h1 className="text-2xl font-black tracking-tighter select-none sm:text-3xl md:text-4xl">
           Pers<span className="text-blue-600">Fit</span>
         </h1>
       </div>

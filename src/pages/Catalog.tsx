@@ -1,114 +1,39 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Search,
   Dumbbell,
   Activity,
   Loader2,
-  X,
   ChevronRight,
-  CheckCircle2,
   SlidersHorizontal,
   XCircle,
+  X,
   Zap,
   Settings,
-  ChevronDown
 } from "lucide-react";
-import { translate } from "../utils/translations";
-import type { Exercise } from "../types/exercise";
+import { translate } from "@/utils/translations";
+import type { Exercise } from "@/types/exercise";
+import { CatalogFilterDropdown } from "@/components/catalog/FilterDropdown";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-interface FilterDropdownProps<T extends string> {
-  label: string;
-  icon: React.ReactNode;
-  options: T[];
-  currentValue: T;
-  onChange: (value: T) => void;
-}
+const ITEMS_PER_PAGE = 12;
 
-const FilterDropdown = <T extends string>({
-  label,
-  icon,
-  options,
-  currentValue,
-  onChange,
-}: FilterDropdownProps<T>) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-
-  // Закрытие при клике вне компонента
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-200 border
-          ${
-            isOpen || currentValue !== "all"
-              ? "bg-blue-50 border-blue-200 text-blue-600"
-              : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
-          }`}
-      >
-        <span
-          className={isOpen || currentValue !== "all" ? "text-blue-500" : "text-gray-400"}
-        >
-          {icon}
-        </span>
-        <span>{currentValue === "all" ? label : translate(currentValue)}</span>
-        <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl shadow-gray-200/50 z-50 py-2 max-h-80 overflow-y-auto no-scrollbar">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => {
-                onChange(opt);
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 transition-colors whitespace-nowrap"
-            >
-              <span
-                className={
-                  currentValue === opt ? "text-blue-600" : "text-gray-600"
-                }
-              >
-                {opt === "all" ? `Все` : translate(opt)}
-              </span>
-              {currentValue === opt && (
-                <CheckCircle2 className="w-4 h-4 text-blue-600" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const Catalog: React.FC = () => {
+const Catalog = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
     null
   );
 
-  // --- СОСТОЯНИЯ ФИЛЬТРОВ ---
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -117,7 +42,6 @@ const Catalog: React.FC = () => {
   const [selectedForce, setSelectedForce] = useState<string>("all");
   const [selectedMechanic, setSelectedMechanic] = useState<string>("all");
 
-  const ITEMS_PER_PAGE = 12;
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
   useEffect(() => {
@@ -130,10 +54,8 @@ const Catalog: React.FC = () => {
       .catch(() => setIsLoading(false));
   }, []);
 
-  // Универсальный сброс пагинации
   const resetScroll = () => setVisibleCount(ITEMS_PER_PAGE);
 
-  // --- ЛОГИКА ФИЛЬТРАЦИИ ---
   const filteredExercises = useMemo(() => {
     return exercises.filter((ex) => {
       const matchesSearch = ex.name
@@ -146,7 +68,6 @@ const Catalog: React.FC = () => {
       const matchesEquipment =
         selectedEquipment === "all" || ex.equipment === selectedEquipment;
 
-      // Используем приведение к string[], чтобы .includes работал корректно без any
       const matchesMuscle =
         selectedMuscle === "all" ||
         (ex.primaryMuscles as string[]).includes(selectedMuscle);
@@ -182,8 +103,8 @@ const Catalog: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -205,50 +126,52 @@ const Catalog: React.FC = () => {
     };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="relative z-20 bg-gray-50/95 backdrop-blur-md border-b border-gray-100 pt-3">
-        <div className="px-4 pb-4">
-          <h1 className="text-2xl font-black text-gray-900 mb-5 tracking-tight">
+    <div className="min-h-0 pb-12">
+      <div className="relative z-20 border-b border-slate-100 bg-slate-50/95 pt-3 backdrop-blur-md">
+        <div className="px-1 pb-4 sm:px-0">
+          <h1 className="mb-4 flex flex-wrap items-center gap-2 text-xl font-black tracking-tight text-slate-900 sm:mb-5 sm:text-2xl">
             Каталог
-            <span className="text-blue-600 text-sm font-medium ml-2 bg-blue-50 px-3 py-1 rounded-full">
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
               {filteredExercises.length}
             </span>
           </h1>
 
           <div className="space-y-4">
-            {/* ПОИСК */}
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-              <input
-                type="text"
+            <div className="group relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-500 sm:left-3.5" />
+              <Input
+                type="search"
                 placeholder="Поиск упражнения..."
-                className="block w-full pl-11 pr-12 py-3.5 bg-white border-none rounded-2xl text-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   resetScroll();
                 }}
+                className="h-auto rounded-2xl border-0 bg-white py-3 pl-10 pr-11 text-sm shadow-sm ring-1 ring-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 sm:py-3.5 sm:pl-11 sm:pr-12"
               />
-              {searchQuery && (
-                <button
+              {searchQuery ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   onClick={() => {
                     setSearchQuery("");
                     resetScroll();
                   }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  aria-label="Очистить поиск"
                 >
                   <XCircle className="h-5 w-5" />
-                </button>
-              )}
+                </Button>
+              ) : null}
             </div>
 
-            {/* СЕТКА ФИЛЬТРОВ */}
-            <div className="bg-gray-50/80 backdrop-blur-sm">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex gap-2 no-scrollbar pb-2">
-                  <FilterDropdown
+            <div className="-mx-2 bg-slate-50/80 px-2 backdrop-blur-sm sm:mx-0 sm:px-0">
+              <div className="mx-auto max-w-7xl">
+                <div className="flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto pb-2 no-scrollbar touch-pan-x">
+                  <CatalogFilterDropdown
                     label="Уровень"
-                    icon={<SlidersHorizontal className="w-4 h-4" />}
+                    icon={<SlidersHorizontal className="h-4 w-4" />}
                     options={["all", "beginner", "intermediate", "expert"]}
                     currentValue={selectedLevel}
                     onChange={(val) => {
@@ -256,9 +179,9 @@ const Catalog: React.FC = () => {
                       resetScroll();
                     }}
                   />
-                  <FilterDropdown
+                  <CatalogFilterDropdown
                     label="Тип"
-                    icon={<Activity className="w-4 h-4" />}
+                    icon={<Activity className="h-4 w-4" />}
                     options={[
                       "all",
                       "strength",
@@ -275,9 +198,9 @@ const Catalog: React.FC = () => {
                       resetScroll();
                     }}
                   />
-                  <FilterDropdown
+                  <CatalogFilterDropdown
                     label="Снаряд"
-                    icon={<Dumbbell className="w-4 h-4" />}
+                    icon={<Dumbbell className="h-4 w-4" />}
                     options={[
                       "all",
                       "body only",
@@ -299,9 +222,9 @@ const Catalog: React.FC = () => {
                       resetScroll();
                     }}
                   />
-                  <FilterDropdown
+                  <CatalogFilterDropdown
                     label="Мышцы"
-                    icon={<Activity className="w-4 h-4" />}
+                    icon={<Activity className="h-4 w-4" />}
                     options={[
                       "all",
                       "abdominals",
@@ -328,9 +251,9 @@ const Catalog: React.FC = () => {
                       resetScroll();
                     }}
                   />
-                  <FilterDropdown
+                  <CatalogFilterDropdown
                     label="Механика"
-                    icon={<Settings className="w-4 h-4" />}
+                    icon={<Settings className="h-4 w-4" />}
                     options={["all", "compound", "isolation"]}
                     currentValue={selectedMechanic}
                     onChange={(val) => {
@@ -338,9 +261,9 @@ const Catalog: React.FC = () => {
                       resetScroll();
                     }}
                   />
-                  <FilterDropdown
+                  <CatalogFilterDropdown
                     label="Усилие"
-                    icon={<Zap className="w-4 h-4" />}
+                    icon={<Zap className="h-4 w-4" />}
                     options={["all", "push", "pull", "static"]}
                     currentValue={selectedForce}
                     onChange={(val) => {
@@ -355,72 +278,76 @@ const Catalog: React.FC = () => {
         </div>
       </div>
 
-      {/* ТВОЙ ОРИГИНАЛЬНЫЙ СПИСОК УПРАЖНЕНИЙ */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mx-auto max-w-7xl px-1 py-6 sm:px-0 sm:py-8">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
           {displayedExercises.map((ex) => (
             <div
               key={ex.id}
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedExercise(ex)}
-              className="group relative bg-white p-5 rounded-[24px] border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedExercise(ex);
+                }
+              }}
+              className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-300 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5 sm:rounded-[24px] sm:p-5"
             >
-              {/* Фоновый декоративный элемент при наведении */}
-              <div className="absolute -top-10 -right-10 w-24 h-24 bg-blue-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl" />
+              <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-blue-50 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
 
               <div className="relative z-10">
-                <h3 className="flex justify-between text-lg font-black text-gray-800 group-hover:text-blue-600 transition-colors leading-tight mb-2">
-                  {translate(ex.name)}
-                  <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                <h3 className="mb-2 flex min-w-0 items-start justify-between gap-2 text-base font-black leading-tight text-slate-800 transition-colors group-hover:text-blue-600 sm:text-lg">
+                  <span className="min-w-0 wrap-break-word">
+                    {translate(ex.name)}
+                  </span>
+                  <ChevronRight className="mt-0.5 h-5 w-5 shrink-0 text-slate-300 transition-all group-hover:translate-x-1 group-hover:text-blue-500" />
                 </h3>
 
-                {/* Короткий список мышц (первые две) */}
-                <div className="flex flex-wrap gap-1 mb-2">
+                <div className="mb-2 flex flex-wrap gap-1">
                   {ex.primaryMuscles.slice(0, 2).map((m) => (
                     <span
                       key={m}
-                      className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md font-bold uppercase"
+                      className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500"
                     >
                       {translate(m)}
                     </span>
                   ))}
-                  {ex.primaryMuscles.length > 2 && (
-                    <span className="text-[10px] text-gray-400 font-bold self-center">
+                  {ex.primaryMuscles.length > 2 ? (
+                    <span className="self-center text-[10px] font-bold text-slate-400">
                       +{ex.primaryMuscles.length - 2}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </div>
-              {/* Нижняя панель с доп. инфо */}
-              <div className="relative z-10 pt-4 border-t border-gray-50 flex items-center justify-between">
-                {/* Группа иконок (слева) */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <div className="p-1.5 bg-gray-50 rounded-lg">
-                      <Dumbbell className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+              <div className="relative z-10 flex flex-col gap-3 border-t border-slate-50 pt-3 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between sm:pt-4">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex min-w-0 max-w-full items-center gap-1.5">
+                    <div className="shrink-0 rounded-lg bg-slate-50 p-1.5">
+                      <Dumbbell className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-blue-500" />
                     </div>
-                    <span className="text-xs font-bold text-gray-500">
+                    <span className="truncate text-xs font-bold text-slate-500">
                       {translate(ex.equipment)}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <div className="p-1.5 bg-gray-50 rounded-lg">
-                      <Activity className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  <div className="flex min-w-0 max-w-full items-center gap-1.5">
+                    <div className="shrink-0 rounded-lg bg-slate-50 p-1.5">
+                      <Activity className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-blue-500" />
                     </div>
-                    <span className="text-xs font-bold text-gray-500">
+                    <span className="truncate text-xs font-bold text-slate-500">
                       {translate(ex.category)}
                     </span>
                   </div>
                 </div>
 
-                {/* УРОВЕНЬ ТЕПЕРЬ ТУТ (справа) */}
                 <div
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                  className={`flex shrink-0 items-center gap-1.5 self-start rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider min-[400px]:self-auto ${
                     levelStyles[ex.level]?.bg || levelStyles.all.bg
                   } ${levelStyles[ex.level]?.text || levelStyles.all.text}`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${
+                    className={`h-1.5 w-1.5 rounded-full ${
                       levelStyles[ex.level]?.dot || levelStyles.all.dot
                     }`}
                   />
@@ -431,94 +358,116 @@ const Catalog: React.FC = () => {
           ))}
         </div>
 
-        {/* КНОПКА ЗАГРУЗИТЬ ЕЩЕ (Новый элемент для производительности) */}
-        {visibleCount < filteredExercises.length && (
+        {visibleCount < filteredExercises.length ? (
           <div className="mt-12 flex justify-center">
-            <button
-              onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
-              className="px-8 py-3 bg-white border border-gray-200 text-gray-600 font-semibold rounded-2xl hover:bg-gray-50 hover:border-blue-300 transition-all shadow-sm"
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-slate-200 px-8 py-3 font-semibold text-slate-600 shadow-sm hover:border-blue-300 hover:bg-slate-50"
+              onClick={() =>
+                setVisibleCount((prev) => prev + ITEMS_PER_PAGE)
+              }
             >
               Показать еще
-            </button>
+            </Button>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* ТВОЕ ОРИГИНАЛЬНОЕ МОДАЛЬНОЕ ОКНО */}
-      {selectedExercise && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl">
-            <div className="p-6 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">
-                {selectedExercise.name}
-              </h2>
-              <button
-                onClick={() => setSelectedExercise(null)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-6 h-6 text-gray-500" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                {selectedExercise.images.map((img, index) => (
-                  <div
-                    key={index}
-                    className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-100"
+      <Dialog
+        open={Boolean(selectedExercise)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedExercise(null);
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="fixed bottom-0 left-0 right-0 top-auto flex max-h-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-slate-200 p-0 sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:max-h-[min(90vh,calc(100vh-2rem))] sm:max-w-2xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-3xl"
+        >
+          {selectedExercise ? (
+            <>
+              <DialogHeader className="flex-row items-start gap-3 space-y-0 border-b border-slate-100 p-4 sm:p-6">
+                <DialogTitle className="min-w-0 flex-1 pr-2 text-left text-lg font-bold text-slate-900 wrap-break-word sm:text-xl">
+                  {selectedExercise.name}
+                </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Подробности упражнения, изображения и пошаговая инструкция.
+                </DialogDescription>
+                <DialogClose asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 rounded-full"
+                    aria-label="Закрыть"
                   >
-                    <img
-                      src={`/exercises/images/${img}`}
-                      alt={`${selectedExercise.name} step ${index}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://via.placeholder.com/400?text=No+Image";
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
+                    <X className="h-5 w-5 text-slate-500 sm:h-6 sm:w-6" />
+                  </Button>
+                </DialogClose>
+              </DialogHeader>
 
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="p-4 bg-gray-50 rounded-2xl">
-                  <span className="block text-xs text-gray-400 uppercase font-bold mb-1">
-                    Мышцы
-                  </span>
-                  <p className="text-gray-700 font-medium">
-                    {translate(selectedExercise.primaryMuscles.join(", "))}
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-2xl">
-                  <span className="block text-xs text-gray-400 uppercase font-bold mb-1">
-                    Тип
-                  </span>
-                  <p className="text-gray-700 font-medium">
-                    {translate(selectedExercise.category)}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-blue-500" />
-                  Инструкция
-                </h4>
-                <ol className="space-y-4">
-                  {selectedExercise.instructions.map((step, i) => (
-                    <li key={i} className="flex gap-4">
-                      <span className="shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
-                        {i + 1}
-                      </span>
-                      <p className="text-gray-600 leading-relaxed">{step}</p>
-                    </li>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-2 sm:gap-4">
+                  {selectedExercise.images.map((img, index) => (
+                    <div
+                      key={`${img}-${index}`}
+                      className="aspect-square overflow-hidden rounded-2xl border border-slate-100 bg-slate-100"
+                    >
+                      <img
+                        src={`/exercises/images/${img}`}
+                        alt={`${selectedExercise.name} шаг ${index + 1}`}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/400?text=No+Image";
+                        }}
+                      />
+                    </div>
                   ))}
-                </ol>
+                </div>
+
+                <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-2 sm:gap-4">
+                  <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-slate-400">
+                      Мышцы
+                    </span>
+                    <p className="wrap-break-word text-sm font-medium text-slate-700 sm:text-base">
+                      {translate(
+                        selectedExercise.primaryMuscles.join(", ")
+                      )}
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
+                    <span className="mb-1 block text-xs font-bold uppercase text-slate-400">
+                      Тип
+                    </span>
+                    <p className="wrap-break-word text-sm font-medium text-slate-700 sm:text-base">
+                      {translate(selectedExercise.category)}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-900 sm:mb-4 sm:text-lg">
+                    <Activity className="h-5 w-5 text-blue-500" />
+                    Инструкция
+                  </h4>
+                  <ol className="space-y-4">
+                    {selectedExercise.instructions.map((step, i) => (
+                      <li key={i} className="flex gap-4">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                          {i + 1}
+                        </span>
+                        <p className="leading-relaxed text-slate-600">{step}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

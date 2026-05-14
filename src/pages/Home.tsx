@@ -13,10 +13,10 @@ export default function Home() {
           <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold tracking-wide uppercase">
             Твой персональный тренер
           </div>
-          <h1 className="text-6xl font-black tracking-tight text-slate-900 sm:text-7xl">
+          <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-6xl md:text-7xl">
             Pers<span className="text-blue-600">Fit</span>
           </h1>
-          <p className="text-xl text-slate-600 max-w-xl mx-auto leading-relaxed">
+          <p className="mx-auto max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg md:text-xl">
             Создай программу тренировок за 2 минуты. Техника, прогресс и мотивация в одном приложении.
           </p>
         </div>

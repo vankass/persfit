@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Scale, Ruler, Baby, Users, Dumbbell } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { getProfile, saveProfile } from "@/lib/db";
+import { saveProfile } from "@/lib/db";
 import { useNavigate } from "react-router-dom";
 
 interface OnboardingProps {
@@ -101,11 +101,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         height: Number(formData.height),
         createdAt: new Date().toISOString(),
       });
-
-      console.log("Данные успешно сохранены в IDB");
-      console.log(getProfile());
-    } catch (error) {
-      console.error("Ошибка сохранения:", error);
+    } catch {
+      return;
     }
 
     await onComplete();
@@ -113,28 +110,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white p-4 ">
-      <style>{`
-        @keyframes pfErrorGlow {
-          0% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
-          55% { box-shadow: 0 0 0 1px rgba(239, 68, 68, 1), 0 0 4px rgba(239, 68, 68, 1); }
-          100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        .pf-error-glow {
-          animation: pfErrorGlow 0.8s ease-out 0s 1;
-        }
-      `}</style>
-
-      <Card className="w-full max-w-md border-none shadow-2xl rounded-3xl overflow-hidden">
-        <CardHeader className="pb-2">
+    <div className="flex min-h-screen items-center justify-center bg-white p-4">
+      <Card className="flex max-h-[min(92dvh,44rem)] w-full max-w-md flex-col overflow-hidden rounded-3xl border-none shadow-2xl">
+        <CardHeader className="shrink-0 pb-2">
           <CardTitle className="text-2xl font-bold text-center text-slate-800 select-none">
             Расскажи о себе
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-6 sm:px-6">
 
-          {/* ИМЯ И ПОЛ */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <label className={labelStyles}>
                 <User className="w-4 h-4 text-blue-500" /> Имя
@@ -210,8 +195,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
           </div>
 
-          {/* ВЕС, РОСТ, ВОЗРАСТ */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <label className={labelStyles}>
                 <Scale className="w-4 h-4 text-green-500" /> Вес (кг)
@@ -267,7 +251,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
           </div>
 
-          {/* УРОВЕНЬ ПОДГОТОВКИ */}
           <div className="space-y-2">
             <label className={labelStyles}>
               <Dumbbell className="w-4 h-4 text-slate-700" /> Уровень подготовки
