@@ -10,6 +10,7 @@ import {
   X,
   Zap,
   Settings,
+  Play,
 } from "lucide-react";
 import { translate } from "@/utils/translations";
 import type { Exercise } from "@/types/exercise";
@@ -24,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { searchExerciseVideo, type YouTubeVideo } from "@/youtubeApi";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -33,6 +35,10 @@ const Catalog = () => {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
     null
   );
+  const [videos, setVideos] = useState<YouTubeVideo[]>([]);
+  const [videosLoading, setVideosLoading] = useState(false);
+  const [videosError, setVideosError] = useState("");
+  const [showVideos, setShowVideos] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
@@ -124,6 +130,35 @@ const Catalog = () => {
       expert: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
       all: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
     };
+
+  const loadVideos = async (exercise: Exercise) => {
+    if (videos.length > 0 && selectedExercise?.id === exercise.id) {
+      setShowVideos(true);
+      return;
+    }
+
+    setVideosLoading(true);
+    setVideosError("");
+    setShowVideos(true);
+
+    try {
+      const results = await searchExerciseVideo(exercise.id);
+      setVideos(results);
+    } catch (err) {
+      setVideosError(
+        err instanceof Error ? err.message : "Не удалось загрузить видео"
+      );
+    } finally {
+      setVideosLoading(false);
+    }
+  };
+
+  const closeDialog = () => {
+    setSelectedExercise(null);
+    setVideos([]);
+    setVideosError("");
+    setShowVideos(false);
+  };
 
   return (
     <div className="min-h-0 pb-12">
@@ -364,9 +399,7 @@ const Catalog = () => {
               type="button"
               variant="outline"
               className="rounded-2xl border-slate-200 px-8 py-3 font-semibold text-slate-600 shadow-sm hover:border-blue-300 hover:bg-slate-50"
-              onClick={() =>
-                setVisibleCount((prev) => prev + ITEMS_PER_PAGE)
-              }
+              onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
             >
               Показать еще
             </Button>
@@ -377,7 +410,7 @@ const Catalog = () => {
       <Dialog
         open={Boolean(selectedExercise)}
         onOpenChange={(open) => {
-          if (!open) setSelectedExercise(null);
+          if (!open) closeDialog();
         }}
       >
         <DialogContent
@@ -432,9 +465,7 @@ const Catalog = () => {
                       Мышцы
                     </span>
                     <p className="wrap-break-word text-sm font-medium text-slate-700 sm:text-base">
-                      {translate(
-                        selectedExercise.primaryMuscles.join(", ")
-                      )}
+                      {translate(selectedExercise.primaryMuscles.join(", "))}
                     </p>
                   </div>
                   <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
@@ -462,6 +493,95 @@ const Catalog = () => {
                       </li>
                     ))}
                   </ol>
+                </div>
+                {/* Видео секция */}
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="flex items-center gap-2 text-base font-bold text-slate-900 sm:text-lg">
+                      <Play className="h-5 w-5 text-red-500" />
+                      Видео
+                    </h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl border-slate-200 text-xs font-semibold"
+                      onClick={() =>
+                        selectedExercise && loadVideos(selectedExercise)
+                      }
+                      disabled={videosLoading}
+                    >
+                      {videosLoading ? (
+                        <>
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          Загрузка...
+                        </>
+                      ) : showVideos && videos.length > 0 ? (
+                        "Обновить"
+                      ) : (
+                        "Найти видео"
+                      )}
+                    </Button>
+                  </div>
+
+                  {videosLoading && (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                    </div>
+                  )}
+
+                  {videosError && (
+                    <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">
+                      {videosError}
+                    </div>
+                  )}
+
+                  {showVideos && !videosLoading && videos.length > 0 && (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {videos.map((video) => (
+                        <a
+                          key={video.id.videoId}
+                          href={`https://youtube.com/watch?v=${video.id.videoId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group/video relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-md"
+                        >
+                          <div className="relative aspect-video overflow-hidden bg-slate-100">
+                            <img
+                              src={
+                                video.snippet.thumbnails.medium?.url ||
+                                video.snippet.thumbnails.default.url
+                              }
+                              alt={video.snippet.title}
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover/video:scale-105"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover/video:opacity-100">
+                              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                                <Play className="h-5 w-5 text-red-600 fill-red-600" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="p-3">
+                            <p className="line-clamp-2 text-sm font-semibold text-slate-800">
+                              {video.snippet.title}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {video.snippet.channelTitle}
+                            </p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {showVideos &&
+                    !videosLoading &&
+                    !videosError &&
+                    videos.length === 0 && (
+                      <p className="py-4 text-center text-sm text-slate-500">
+                        Видео не найдены
+                      </p>
+                    )}
                 </div>
               </div>
             </>
