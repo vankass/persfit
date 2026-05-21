@@ -1,5 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { getProfile } from "@/lib/db";
+import { getProfile, getWorkoutHistory } from "@/lib/db";
+import type { UserProfile } from "@/types/profile";
+import type { WorkoutHistoryEntry } from "@/types/workout";
+import { GOAL_LABELS } from "@/lib/workoutGenerator";
 import {
   History,
   Clock,
@@ -17,30 +20,38 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-interface UserProfile {
-  name: string;
-  gender: string;
-  age: string;
-  weight: string;
-  height: string;
-  level: string;
-}
-
 export default function Dashboard() {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [history, setHistory] = useState<WorkoutHistoryEntry[]>([]);
+  const [weekCount, setWeekCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadData = async () => {
-      const profile = await getProfile();
-      if (profile) setUser(profile);
+      const [profile, workouts] = await Promise.all([
+        getProfile(),
+        getWorkoutHistory(),
+      ]);
+      if (profile) setUser(profile as UserProfile);
+      setHistory(workouts);
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      setWeekCount(
+        workouts.filter(
+          (e) => new Date(e.finishedAt).getTime() >= weekAgo
+        ).length
+      );
       setLoading(false);
     };
     loadData();
   }, []);
 
+  const lastWorkout = history[0] ?? null;
+  const totalMinutes = history.reduce(
+    (sum, e) => sum + Math.floor(e.totalDurationSeconds / 60),
+    0
+  );
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400 font-medium">
@@ -101,23 +112,27 @@ export default function Dashboard() {
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatBox
           icon={<Flame className="text-orange-500" />}
-          value="0"
+          value={String(Math.min(history.length, 99))}
           label="подряд"
+          onClick={() => navigate("/history")}
         />
         <StatBox
           icon={<Dumbbell className="text-blue-500" />}
-          value="0"
+          value={String(history.length)}
           label="всего"
+          onClick={() => navigate("/history")}
         />
         <StatBox
           icon={<Calendar className="text-green-500" />}
-          value="0"
+          value={String(weekCount)}
           label="в неделю"
+          onClick={() => navigate("/history")}
         />
         <StatBox
           icon={<Clock className="text-purple-500" />}
-          value="0"
+          value={String(totalMinutes)}
           label="мин всего"
+          onClick={() => navigate("/history")}
         />
       </section>
 
@@ -141,24 +156,43 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          <div className="py-6 sm:py-8 md:py-10 text-center">
-            <div className="inline-flex p-3 md:p-4 bg-slate-50 rounded-full mb-3 md:mb-4">
-              <History className="w-6 h-6 md:w-8 md:h-8 text-slate-300" />
+          {lastWorkout ? (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-left">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                Последняя тренировка
+              </p>
+              <p className="mt-1 font-bold text-slate-900">
+                {GOAL_LABELS[lastWorkout.planned.params.goal]}
+              </p>
+              <p className="text-sm text-slate-500">
+                {new Date(lastWorkout.finishedAt).toLocaleDateString("ru-RU")} ·{" "}
+                {lastWorkout.planned.exercises.length} упражнений ·{" "}
+                {Math.floor(lastWorkout.totalDurationSeconds / 60)} мин
+              </p>
             </div>
-            <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-400">
-              История пуста
-            </h3>
-            <p className="text-slate-400 text-xs md:text-sm mt-1">
-              Здесь будет отображаться твой прогресс по дням
-            </p>
-          </div>
+          ) : (
+            <div className="py-6 sm:py-8 md:py-10 text-center">
+              <div className="inline-flex p-3 md:p-4 bg-slate-50 rounded-full mb-3 md:mb-4">
+                <History className="w-6 h-6 md:w-8 md:h-8 text-slate-300" />
+              </div>
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-400">
+                История пуста
+              </h3>
+              <p className="text-slate-400 text-xs md:text-sm mt-1">
+                Здесь будет отображаться твой прогресс по дням
+              </p>
+            </div>
+          )}
 
           <Button
             variant="secondary"
-            disabled
-            className="w-full py-5 md:py-6 rounded-2xl font-bold text-sm md:text-base bg-slate-50 text-slate-300 border border-transparent"
+            disabled={!lastWorkout}
+            className="w-full py-5 md:py-6 rounded-2xl font-bold text-sm md:text-base bg-slate-50 text-slate-700 border border-transparent disabled:text-slate-300"
+            onClick={() => navigate("/generator")}
           >
-            Повторить последнюю программу
+            {lastWorkout
+              ? "Новая тренировка"
+              : "Повторить последнюю программу"}
           </Button>
         </div>
       </section>
@@ -170,16 +204,18 @@ function StatBox({
   icon,
   value,
   label,
+  onClick,
 }: {
   icon: React.ReactNode;
   value: string;
   label: string;
+  onClick?: () => void;
 }) {
   const navigate = useNavigate();
 
   return (
     <div 
-    onClick={() => {navigate("/stats")}}
+    onClick={onClick ?? (() => navigate("/stats"))}
     className="bg-white p-4 md:p-6 rounded-[24px] md:rounded-[28px] border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow">
       <div className="p-2 bg-slate-50 rounded-xl">{icon}</div>
       <div className="text-center">
