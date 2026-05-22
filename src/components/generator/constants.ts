@@ -31,11 +31,3 @@ export const MUSCLE_OPTIONS: MuscleGroup[] = [
   "traps",
   "forearms",
 ];
-
-export const WIZARD_STEPS = [
-  "Цель",
-  "Длительность",
-  "Оборудование",
-  "Фокус",
-  "Тип нагрузки",
-] as const;

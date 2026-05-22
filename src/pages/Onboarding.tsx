@@ -13,6 +13,7 @@ import { User, Scale, Ruler, Baby, Users, Dumbbell } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { saveProfile } from "@/lib/db";
 import { useNavigate } from "react-router-dom";
+import type { ProfileGender, ProfileLevel } from "@/types/profile";
 
 interface OnboardingProps {
   onComplete: () => Promise<void>;
@@ -94,16 +95,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     }
 
     try {
-      await saveProfile({
-        ...formData,
-        age: Number(formData.age),
-        weight: Number(formData.weight),
-        height: Number(formData.height),
-        createdAt: new Date().toISOString(),
-      });
-    } catch {
-      return;
-    }
+  await saveProfile({
+    name: formData.name,
+    gender: formData.gender as ProfileGender,  
+    age: Number(formData.age),
+    weight: Number(formData.weight),
+    height: Number(formData.height),
+    level: formData.level as ProfileLevel,     
+    createdAt: new Date().toISOString(),
+  });
+} catch {
+  return;
+}
 
     await onComplete();
     navigate("/dashboard");

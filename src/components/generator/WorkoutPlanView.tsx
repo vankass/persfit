@@ -10,11 +10,16 @@ import { ArrowLeftRight, Play, RefreshCw, Timer } from "lucide-react";
 import type { Exercise } from "@/types/exercise";
 import type { GeneratedWorkout, PlannedExercise } from "@/types/workout";
 import { translate } from "@/utils/translations";
-import { GOAL_LABELS } from "@/lib/workoutGenerator";
+import {
+  getPlannedDurationMinutes,
+  getSessionLabel,
+  recalculateWorkoutDuration,
+} from "@/lib/workoutGenerator";
 import {
   buildCandidatePoolForAlternatives,
   getAlternatives,
 } from "@/lib/exerciseAlternatives";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 interface WorkoutPlanViewProps {
   workout: GeneratedWorkout;
@@ -45,7 +50,9 @@ export function WorkoutPlanView({
     const updated = workout.exercises.map((item, i) =>
       i === index ? { ...item, exercise: newExercise } : item
     );
-    onWorkoutChange({ ...workout, exercises: updated });
+    onWorkoutChange(
+      recalculateWorkoutDuration({ ...workout, exercises: updated })
+    );
     setReplaceIndex(null);
   };
 
@@ -58,17 +65,23 @@ export function WorkoutPlanView({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-black text-slate-900">Ваш план</h2>
+      <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+        <h2 className="text-xl font-black text-slate-900 sm:text-2xl">
+          Ваш план
+        </h2>
         <p className="mt-1 text-sm text-slate-500">
-          {GOAL_LABELS[workout.params.goal]} · {workout.params.durationMinutes}{" "}
-          мин · {workout.exercises.length} упражнений
+          {getSessionLabel(workout.params)} · ≈{" "}
+          {getPlannedDurationMinutes(workout)} мин · {workout.exercises.length}{" "}
+          упражнений
         </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <p className="mt-1 text-xs text-slate-400">
+          Перед и после тренировки — видео разминки и заминки (~10–12 мин)
+        </p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             type="button"
             variant="outline"
-            className="rounded-2xl"
+            className="min-h-12 rounded-2xl"
             onClick={onRegenerate}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -76,7 +89,7 @@ export function WorkoutPlanView({
           </Button>
           <Button
             type="button"
-            className="rounded-2xl bg-blue-600 font-bold hover:bg-blue-700"
+            className="min-h-12 rounded-2xl bg-blue-600 font-bold hover:bg-blue-700"
             onClick={onStart}
           >
             <Play className="mr-2 h-4 w-4 fill-current" />
@@ -103,6 +116,9 @@ export function WorkoutPlanView({
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-3xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Заменить упражнение</DialogTitle>
+            <DialogDescription>
+              Заменить упражнение на альтернативное
+            </DialogDescription>
           </DialogHeader>
           {replacingItem && (
             <p className="text-sm text-slate-500">
@@ -112,7 +128,8 @@ export function WorkoutPlanView({
           <div className="space-y-2">
             {alternatives.length === 0 ? (
               <p className="text-sm text-slate-400">
-                Альтернатив не найдено. Попробуйте расширить список оборудования.
+                Альтернатив не найдено. Попробуйте расширить список
+                оборудования.
               </p>
             ) : (
               alternatives.map((alt) => (
@@ -162,7 +179,7 @@ function ExercisePlanCard({
   const img = exercise.images[0];
 
   return (
-    <div className="flex gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+    <div className="flex gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4">
       {img ? (
         <img
           src={`/exercises/images/${img}`}

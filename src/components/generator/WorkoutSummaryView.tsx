@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, Dumbbell, Save } from "lucide-react";
 import type { GeneratedWorkout } from "@/types/workout";
 import type { SessionProgress } from "./WorkoutSessionView";
-import { GOAL_LABELS } from "@/lib/workoutGenerator";
+import { getSessionLabel } from "@/lib/workoutGenerator";
 
 interface WorkoutSummaryViewProps {
   workout: GeneratedWorkout;
@@ -55,7 +55,7 @@ export function WorkoutSummaryView({
           Тренировка завершена!
         </h2>
         <p className="mt-1 text-slate-500">
-          {GOAL_LABELS[workout.params.goal]} · {workout.exercises.length}{" "}
+          {getSessionLabel(workout.params)} · {workout.exercises.length}{" "}
           упражнений
         </p>
       </div>

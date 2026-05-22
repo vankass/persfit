@@ -504,7 +504,7 @@ const Catalog = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="lg"
                       className="rounded-xl border-slate-200 text-xs font-semibold"
                       onClick={() =>
                         selectedExercise && loadVideos(selectedExercise)

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { getProfile, getWorkoutHistory } from "@/lib/db";
 import type { UserProfile } from "@/types/profile";
 import type { WorkoutHistoryEntry } from "@/types/workout";
-import { GOAL_LABELS } from "@/lib/workoutGenerator";
+import { getSessionLabel } from "@/lib/workoutGenerator";
 import {
   History,
   Clock,
@@ -162,7 +162,7 @@ export default function Dashboard() {
                 Последняя тренировка
               </p>
               <p className="mt-1 font-bold text-slate-900">
-                {GOAL_LABELS[lastWorkout.planned.params.goal]}
+                {getSessionLabel(lastWorkout.planned.params)}
               </p>
               <p className="text-sm text-slate-500">
                 {new Date(lastWorkout.finishedAt).toLocaleDateString("ru-RU")} ·{" "}

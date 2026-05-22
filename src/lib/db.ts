@@ -68,3 +68,8 @@ export const getWorkoutById = async (
   const db = await initDB();
   return db.get(HISTORY_STORE, id);
 };
+
+export const deleteWorkoutHistory = async (id: string): Promise<void> => {
+  const db = await initDB();
+  await db.delete(HISTORY_STORE, id);
+};

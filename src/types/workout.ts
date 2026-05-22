@@ -1,19 +1,35 @@
 import type { Exercise, MuscleGroup } from "./exercise";
 import type { UserProfile } from "./profile";
 
-export type WorkoutGoal = "strength" | "fat_loss" | "endurance" | "general";
+/** @deprecated legacy history entries */
+export type LegacyWorkoutGoal = "strength" | "fat_loss" | "endurance" | "general";
+
+export type WorkoutIntensity = "low" | "medium" | "high";
 export type WorkoutFocus = "full_body" | "upper" | "lower" | "custom";
-export type LoadType = "strength" | "cardio" | "stretching" | "mixed";
+export type LoadType = "strength" | "cardio";
+
+/** @deprecated legacy history entries */
+export type LegacyLoadType = LoadType | "stretching" | "mixed";
+
+export type SessionPhase = "warmup" | "workout" | "cooldown";
 
 export interface GeneratorParams {
-  goal: WorkoutGoal;
-  durationMinutes: 20 | 40 | 60;
+  intensity: WorkoutIntensity;
   equipment: string[];
   focus: WorkoutFocus;
   targetMuscles?: MuscleGroup[];
   loadType: LoadType;
-  includeWarmup?: boolean;
-  includeCooldown?: boolean;
+}
+
+/** @deprecated stored in old history snapshots */
+export interface LegacyGeneratorParams {
+  goal?: LegacyWorkoutGoal;
+  durationMinutes?: 20 | 40 | 60;
+  intensity?: WorkoutIntensity;
+  equipment?: string[];
+  focus?: WorkoutFocus;
+  targetMuscles?: MuscleGroup[];
+  loadType?: LoadType;
 }
 
 export interface WorkoutSetPrescription {
@@ -34,6 +50,7 @@ export interface GeneratedWorkout {
   params: GeneratorParams;
   profileSnapshot: UserProfile;
   exercises: PlannedExercise[];
+  estimatedDurationMinutes: number;
 }
 
 export interface CompletedSet {

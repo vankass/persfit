@@ -19,14 +19,14 @@ export async function searchExerciseVideo(exerciseId: string): Promise<YouTubeVi
     .replace(/-/g, ' ')      
     .replace(/\d+/g, '');    
 
-  const query = `${searchTerm} exercise technique`;
+  const query = `${searchTerm} техника выполнения`;
   
   const params = new URLSearchParams({
     part: 'snippet',
     q: query,
     type: 'video',
     maxResults: '4',
-    relevanceLanguage: 'en',
+    relevanceLanguage: 'ru',
     key: API_KEY,
   });
 

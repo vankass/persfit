@@ -15,7 +15,7 @@ import {
   DEFAULT_GENERATOR_PARAMS,
   generateWorkout,
 } from "@/lib/workoutGenerator";
-import { GeneratorWizard } from "@/components/generator/GeneratorWizard";
+import { GeneratorForm } from "@/components/generator/GeneratorForm";
 import { WorkoutPlanView } from "@/components/generator/WorkoutPlanView";
 import {
   WorkoutSessionView,
@@ -38,11 +38,12 @@ export default function Generator() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
-  const [params, setParams] = useState<GeneratorParams>(DEFAULT_GENERATOR_PARAMS);
-  const [workout, setWorkout] = useState<GeneratedWorkout | null>(null);
-  const [sessionProgress, setSessionProgress] = useState<SessionProgress | null>(
-    null
+  const [params, setParams] = useState<GeneratorParams>(
+    DEFAULT_GENERATOR_PARAMS
   );
+  const [workout, setWorkout] = useState<GeneratedWorkout | null>(null);
+  const [sessionProgress, setSessionProgress] =
+    useState<SessionProgress | null>(null);
   const [finishedAt, setFinishedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -72,6 +73,7 @@ export default function Generator() {
   const handleStartWorkout = () => {
     if (!workout) return;
     setSessionProgress({
+      sessionPhase: "warmup",
       exerciseIndex: 0,
       completedSets: initCompletedSets(workout),
       startedAt: new Date().toISOString(),
@@ -121,15 +123,17 @@ export default function Generator() {
   if (!profile) {
     return (
       <div className="rounded-3xl border border-slate-100 bg-white p-8 text-center">
-        <p className="text-slate-500">Сначала заполните профиль в онбординге.</p>
+        <p className="text-slate-500">
+          Сначала заполните профиль в онбординге.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-12">
+    <div className="mx-auto max-w-3xl space-y-3">
       {phase === "wizard" && (
-        <GeneratorWizard
+        <GeneratorForm
           profile={profile}
           params={params}
           onChange={setParams}

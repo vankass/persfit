@@ -7,8 +7,12 @@ import {
 import type {
   GeneratedWorkout,
   GeneratorParams,
+  LegacyGeneratorParams,
+  LegacyWorkoutGoal,
+  LoadType,
   PlannedExercise,
-  WorkoutGoal,
+  WorkoutFocus,
+  WorkoutIntensity,
   WorkoutSetPrescription,
 } from "@/types/workout";
 
@@ -47,6 +51,74 @@ const FULL_BODY_ROTATION: MuscleGroup[] = [
   "calves",
 ];
 
+const EXERCISE_TRANSITION_SECONDS = 75;
+const BUDGET_MIN_SECONDS = 28 * 60;
+const BUDGET_MAX_SECONDS = 65 * 60;
+
+const WORK_PER_SET_SECONDS: Record<WorkoutIntensity, number> = {
+  low: 40,
+  medium: 45,
+  high: 55,
+};
+
+const INTENSITY_LABELS: Record<WorkoutIntensity, string> = {
+  low: "Лёгкая",
+  medium: "Средняя",
+  high: "Высокая",
+};
+
+const LEGACY_GOAL_LABELS: Record<string, string> = {
+  strength: "Сила",
+  fat_loss: "Похудение",
+  endurance: "Выносливость",
+  general: "Общая форма",
+};
+
+const LEGACY_GOAL_SESSION_LABELS: Record<LegacyWorkoutGoal, string> = {
+  strength: "Силовая · Высокая",
+  fat_loss: "Силовая · Высокая",
+  endurance: "Силовая · Средняя",
+  general: "Силовая · Средняя",
+};
+
+export function getGoalLabel(goal: string): string {
+  return LEGACY_GOAL_LABELS[goal] ?? goal;
+}
+
+export function getIntensityLabel(
+  intensity: WorkoutIntensity | string
+): string {
+  return INTENSITY_LABELS[intensity as WorkoutIntensity] ?? intensity;
+}
+
+export function getSessionLabel(
+  params: GeneratorParams | LegacyGeneratorParams
+): string {
+  if (params.intensity != null && params.loadType != null) {
+    return `${getLoadTypeLabel(params.loadType)} · ${getIntensityLabel(
+      params.intensity
+    )}`;
+  }
+  const legacyGoal = params.goal;
+  if (legacyGoal && legacyGoal in LEGACY_GOAL_SESSION_LABELS) {
+    return LEGACY_GOAL_SESSION_LABELS[legacyGoal as LegacyWorkoutGoal];
+  }
+  if (legacyGoal) {
+    return getGoalLabel(legacyGoal);
+  }
+  return "Тренировка";
+}
+
+function resolveIntensity(
+  params: GeneratorParams | LegacyGeneratorParams
+): WorkoutIntensity {
+  if (params.intensity) return params.intensity;
+  const goal = params.goal;
+  if (goal === "fat_loss" || goal === "strength") return "high";
+  if (goal === "endurance") return "medium";
+  return "medium";
+}
+
 function getTargetMuscles(params: GeneratorParams): MuscleGroup[] {
   if (params.focus === "upper") return UPPER_MUSCLES;
   if (params.focus === "lower") return LOWER_MUSCLES;
@@ -58,29 +130,138 @@ function getTargetMuscles(params: GeneratorParams): MuscleGroup[] {
 
 function getCategoriesForParams(params: GeneratorParams): string[] {
   switch (params.loadType) {
-    case "strength":
-      return ["strength", "powerlifting"];
     case "cardio":
       return ["cardio", "plyometrics"];
-    case "stretching":
-      return ["stretching"];
-    case "mixed":
-      if (params.goal === "fat_loss") {
-        return ["strength", "cardio", "plyometrics"];
-      }
-      if (params.goal === "endurance") {
-        return ["strength", "cardio", "plyometrics"];
-      }
-      return ["strength", "cardio", "stretching"];
+    case "strength":
     default:
-      return ["strength"];
+      return ["strength", "powerlifting"];
   }
 }
 
-function getMainExerciseCount(duration: 20 | 40 | 60): number {
-  if (duration === 20) return 4 + Math.floor(Math.random() * 2);
-  if (duration === 40) return 6 + Math.floor(Math.random() * 3);
-  return 8 + Math.floor(Math.random() * 3);
+function getMinimumDistinctMuscles(params: GeneratorParams): number {
+  if (params.focus === "full_body") return 4;
+  if (params.focus === "upper" || params.focus === "lower") return 3;
+  if (params.focus === "custom" && params.targetMuscles?.length) {
+    return Math.min(params.targetMuscles.length, 4);
+  }
+  return 3;
+}
+
+function getMaxExercises(focus: WorkoutFocus): number {
+  if (focus === "full_body") return 6;
+  return 5;
+}
+
+export function getSessionBudgetSeconds(
+  intensity: WorkoutIntensity,
+  focus: WorkoutFocus,
+  level: ProfileLevel
+): number {
+  const baseMinutes = focus === "full_body" ? 50 : focus === "custom" ? 35 : 40;
+
+  let minutes = baseMinutes;
+  if (level === "beginner") minutes -= 8;
+  if (level === "advanced") minutes += 8;
+  if (intensity === "high") minutes += 5;
+  if (intensity === "low") minutes -= 5;
+
+  const seconds = minutes * 60;
+  return Math.min(BUDGET_MAX_SECONDS, Math.max(BUDGET_MIN_SECONDS, seconds));
+}
+
+export function estimateExerciseSeconds(
+  prescription: WorkoutSetPrescription,
+  category: string,
+  intensity: WorkoutIntensity
+): number {
+  const { sets, restSeconds } = prescription;
+
+  if (category === "cardio" || category === "plyometrics") {
+    const workPerSet =
+      intensity === "high" ? 30 : intensity === "low" ? 45 : 40;
+    return (
+      sets * workPerSet +
+      Math.max(0, sets - 1) * restSeconds +
+      EXERCISE_TRANSITION_SECONDS
+    );
+  }
+
+  const workPerSet = WORK_PER_SET_SECONDS[intensity];
+  return (
+    sets * workPerSet +
+    Math.max(0, sets - 1) * restSeconds +
+    EXERCISE_TRANSITION_SECONDS
+  );
+}
+
+export function computeWorkoutDuration(
+  exercises: PlannedExercise[],
+  params: GeneratorParams
+): number {
+  return computeWorkoutDurationWithIntensity(
+    exercises,
+    params.loadType,
+    params.intensity
+  );
+}
+
+export function recalculateWorkoutDuration(
+  workout: GeneratedWorkout
+): GeneratedWorkout {
+  const intensity = resolveIntensity(workout.params);
+  const loadType = workout.params.loadType ?? "strength";
+  const minutes = computeWorkoutDurationWithIntensity(
+    workout.exercises,
+    loadType,
+    intensity
+  );
+  return { ...workout, estimatedDurationMinutes: minutes };
+}
+
+function computeWorkoutDurationWithIntensity(
+  exercises: PlannedExercise[],
+  _loadType: LoadType,
+  intensity: WorkoutIntensity
+): number {
+  if (exercises.length === 0) return 0;
+
+  let totalSeconds = 0;
+  exercises.forEach((item, index) => {
+    totalSeconds += estimateExerciseSeconds(
+      item.prescription,
+      item.exercise.category,
+      intensity
+    );
+    if (index > 0) {
+      totalSeconds -= EXERCISE_TRANSITION_SECONDS;
+    }
+  });
+
+  return Math.max(1, Math.round(totalSeconds / 60));
+}
+
+function countDistinctMuscles(exercises: Exercise[]): number {
+  const muscles = new Set<MuscleGroup>();
+  for (const ex of exercises) {
+    if (ex.primaryMuscles[0]) muscles.add(ex.primaryMuscles[0]);
+  }
+  return muscles.size;
+}
+
+function sumPlannedSeconds(
+  planned: PlannedExercise[],
+  intensity: WorkoutIntensity
+): number {
+  return planned.reduce(
+    (sum, item) =>
+      sum +
+      estimateExerciseSeconds(
+        item.prescription,
+        item.exercise.category,
+        intensity
+      ),
+    0
+  );
 }
 
 export function filterExercises(
@@ -125,25 +306,41 @@ export function filterExercises(
 }
 
 export function buildPrescription(
-  goal: WorkoutGoal,
+  loadType: LoadType,
+  intensity: WorkoutIntensity,
   profileLevel: ProfileLevel,
   category: string
 ): WorkoutSetPrescription {
-  const presets: Record<WorkoutGoal, WorkoutSetPrescription> = {
-    strength: { sets: 4, reps: "4-6", restSeconds: 120 },
-    fat_loss: { sets: 3, reps: "12-15", restSeconds: 45 },
-    endurance: { sets: 3, reps: "15-20", restSeconds: 30 },
-    general: { sets: 3, reps: "8-12", restSeconds: 60 },
-  };
-
-  const base = { ...presets[goal] };
-
-  if (category === "cardio" || category === "plyometrics") {
-    return { sets: 3, reps: "30-45 сек", restSeconds: 30 };
-  }
   if (category === "stretching") {
     return { sets: 1, reps: "30-60 сек", restSeconds: 15 };
   }
+
+  if (category === "cardio" || category === "plyometrics") {
+    const cardioPresets: Record<WorkoutIntensity, WorkoutSetPrescription> = {
+      low: { sets: 3, reps: "40-50 сек", restSeconds: 40 },
+      medium: { sets: 3, reps: "30-45 сек", restSeconds: 30 },
+      high: { sets: 4, reps: "20-30 сек", restSeconds: 20 },
+    };
+    const base = { ...cardioPresets[intensity] };
+    if (profileLevel === "beginner" && base.sets > 2) base.sets -= 1;
+    if (profileLevel === "advanced" && base.sets < 5) base.sets += 1;
+    return base;
+  }
+
+  const strengthPresets: Record<WorkoutIntensity, WorkoutSetPrescription> = {
+    low: { sets: 3, reps: "12-15", restSeconds: 60 },
+    medium: { sets: 3, reps: "8-12", restSeconds: 60 },
+    high: { sets: 4, reps: "4-6", restSeconds: 120 },
+  };
+
+  const base =
+    loadType === "cardio"
+      ? {
+          low: { sets: 3, reps: "40-50 сек", restSeconds: 40 },
+          medium: { sets: 3, reps: "30-45 сек", restSeconds: 30 },
+          high: { sets: 4, reps: "20-30 сек", restSeconds: 20 },
+        }[intensity]
+      : { ...strengthPresets[intensity] };
 
   if (profileLevel === "beginner" && base.sets > 2) {
     base.sets -= 1;
@@ -157,14 +354,15 @@ export function buildPrescription(
 
 function scoreExercise(
   ex: Exercise,
-  goal: WorkoutGoal,
+  params: GeneratorParams,
   lastForce: "push" | "pull" | "static" | null
 ): number {
   let score = 0;
-  if (goal === "strength" || goal === "general") {
+  if (params.loadType === "strength" && params.intensity === "high") {
     if (ex.mechanic === "compound") score += 3;
+  } else if (ex.mechanic === "compound") {
+    score += 1;
   }
-  if (goal === "fat_loss" && ex.mechanic === "compound") score += 1;
   if (ex.force && ex.force !== lastForce) score += 2;
   return score;
 }
@@ -172,8 +370,7 @@ function scoreExercise(
 function pickMainExercises(
   pool: Exercise[],
   count: number,
-  params: GeneratorParams,
-  goal: WorkoutGoal
+  params: GeneratorParams
 ): Exercise[] {
   const targetMuscles = getTargetMuscles(params);
   const picked: Exercise[] = [];
@@ -181,9 +378,13 @@ function pickMainExercises(
   let lastForce: "push" | "pull" | "static" | null = null;
   let muscleIndex = 0;
 
-  const available = pool.filter(
-    (ex) => ex.category !== "stretching" && ex.category !== "cardio"
-  );
+  const available = pool.filter((ex) => {
+    if (ex.category === "stretching") return false;
+    if (params.loadType === "cardio") {
+      return ex.category === "cardio" || ex.category === "plyometrics";
+    }
+    return ex.category !== "cardio" && ex.category !== "plyometrics";
+  });
 
   while (picked.length < count && available.length > 0) {
     const targetMuscle =
@@ -206,7 +407,9 @@ function pickMainExercises(
     }
 
     const sorted = [...candidates].sort(
-      (a, b) => scoreExercise(b, goal, lastForce) - scoreExercise(a, goal, lastForce)
+      (a, b) =>
+        scoreExercise(b, params, lastForce) -
+        scoreExercise(a, params, lastForce)
     );
     const chosen = sorted[0];
     picked.push(chosen);
@@ -220,7 +423,9 @@ function pickMainExercises(
     const remaining = available
       .filter((ex) => !picked.some((p) => p.id === ex.id))
       .sort(
-        (a, b) => scoreExercise(b, goal, lastForce) - scoreExercise(a, goal, lastForce)
+        (a, b) =>
+          scoreExercise(b, params, lastForce) -
+          scoreExercise(a, params, lastForce)
       );
     for (const ex of remaining) {
       if (picked.length >= count) break;
@@ -234,30 +439,24 @@ function pickMainExercises(
   return picked;
 }
 
-function pickStretchExercise(
-  all: Exercise[],
-  profile: UserProfile,
+function pickNextExercise(
+  pool: Exercise[],
+  alreadyPicked: Exercise[],
+  params: GeneratorParams
+): Exercise | null {
+  const batch = pickMainExercises(pool, alreadyPicked.length + 1, params);
+  if (batch.length <= alreadyPicked.length) return null;
+  return batch[batch.length - 1];
+}
+
+function pickCardioFinisher(
+  pool: Exercise[],
   params: GeneratorParams,
   excludeIds: Set<string>
 ): Exercise | null {
-  const allowedLevels = getAllowedExerciseLevels(profile.level);
-  const candidates = all.filter(
-    (ex) =>
-      ex.category === "stretching" &&
-      allowedLevels.includes(ex.level) &&
-      !excludeIds.has(ex.id) &&
-      !ex.primaryMuscles.includes("neck")
-  );
-  if (candidates.length === 0) return null;
-  return candidates[Math.floor(Math.random() * candidates.length)];
-}
-
-function pickCardioIfNeeded(
-  pool: Exercise[],
-  goal: WorkoutGoal,
-  excludeIds: Set<string>
-): Exercise | null {
-  if (goal !== "fat_loss" && goal !== "endurance") return null;
+  if (params.loadType !== "strength" || params.intensity !== "high") {
+    return null;
+  }
   const cardio = pool.filter(
     (ex) =>
       (ex.category === "cardio" || ex.category === "plyometrics") &&
@@ -267,76 +466,98 @@ function pickCardioIfNeeded(
   return cardio[Math.floor(Math.random() * cardio.length)];
 }
 
+function buildPlannedExercises(
+  exercises: Exercise[],
+  params: GeneratorParams,
+  level: ProfileLevel
+): PlannedExercise[] {
+  return exercises.map((ex, index) => ({
+    exercise: ex,
+    prescription: buildPrescription(
+      params.loadType,
+      params.intensity,
+      level,
+      ex.category
+    ),
+    order: index,
+  }));
+}
+
 export function generateWorkout(
   allExercises: Exercise[],
   profile: UserProfile,
   params: GeneratorParams
 ): GeneratedWorkout {
   const pool = filterExercises(allExercises, profile, params);
-  const mainCount = getMainExerciseCount(params.durationMinutes);
-  const mainExercises = pickMainExercises(pool, mainCount, params, params.goal);
+  const budgetSeconds = getSessionBudgetSeconds(
+    params.intensity,
+    params.focus,
+    profile.level
+  );
+  const minMuscles = getMinimumDistinctMuscles(params);
+  const maxExercises = getMaxExercises(params.focus);
 
-  const excludeIds = new Set(mainExercises.map((e) => e.id));
-  const planned: PlannedExercise[] = [];
-  let order = 0;
+  const picked: Exercise[] = [];
 
-  if (params.includeWarmup) {
-    const warmup = pickStretchExercise(allExercises, profile, params, excludeIds);
-    if (warmup) {
-      excludeIds.add(warmup.id);
-      planned.push({
-        exercise: warmup,
-        prescription: buildPrescription(
-          params.goal,
-          profile.level,
-          warmup.category
-        ),
-        order: order++,
-      });
-    }
-  }
+  while (picked.length < maxExercises) {
+    const next = pickNextExercise(pool, picked, params);
+    if (!next) break;
 
-  for (const ex of mainExercises) {
-    planned.push({
-      exercise: ex,
-      prescription: buildPrescription(params.goal, profile.level, ex.category),
-      order: order++,
-    });
-  }
-
-  const cardio = pickCardioIfNeeded(pool, params.goal, excludeIds);
-  if (cardio) {
-    excludeIds.add(cardio.id);
-    planned.push({
-      exercise: cardio,
-      prescription: buildPrescription(
-        params.goal,
-        profile.level,
-        cardio.category
-      ),
-      order: order++,
-    });
-  }
-
-  if (params.includeCooldown) {
-    const cooldown = pickStretchExercise(
-      allExercises,
-      profile,
+    const trialPlanned = buildPlannedExercises(
+      [...picked, next],
       params,
-      excludeIds
+      profile.level
     );
-    if (cooldown) {
-      planned.push({
-        exercise: cooldown,
-        prescription: buildPrescription(
-          params.goal,
-          profile.level,
-          cooldown.category
-        ),
-        order: order++,
-      });
+    const totalIfAdded = sumPlannedSeconds(trialPlanned, params.intensity);
+    const musclesCovered = countDistinctMuscles([...picked, next]);
+
+    if (
+      picked.length > 0 &&
+      totalIfAdded > budgetSeconds &&
+      musclesCovered >= minMuscles
+    ) {
+      break;
+    }
+
+    picked.push(next);
+  }
+
+  let planned = buildPlannedExercises(picked, params, profile.level);
+  const excludeIds = new Set(picked.map((e) => e.id));
+
+  const cardio = pickCardioFinisher(pool, params, excludeIds);
+  if (cardio) {
+    const cardioPrescription = buildPrescription(
+      params.loadType,
+      params.intensity,
+      profile.level,
+      cardio.category
+    );
+    const cardioSeconds = estimateExerciseSeconds(
+      cardioPrescription,
+      cardio.category,
+      params.intensity
+    );
+    const currentSeconds = sumPlannedSeconds(planned, params.intensity);
+    const remaining = budgetSeconds - currentSeconds;
+
+    if (remaining >= cardioSeconds) {
+      planned = [
+        ...planned,
+        {
+          exercise: cardio,
+          prescription: cardioPrescription,
+          order: planned.length,
+        },
+      ];
     }
   }
+
+  const estimatedDurationMinutes = computeWorkoutDurationWithIntensity(
+    planned,
+    params.loadType,
+    params.intensity
+  );
 
   return {
     id: crypto.randomUUID(),
@@ -344,22 +565,45 @@ export function generateWorkout(
     params,
     profileSnapshot: profile,
     exercises: planned,
+    estimatedDurationMinutes,
   };
 }
 
-export const GOAL_LABELS: Record<WorkoutGoal, string> = {
-  strength: "Сила",
-  fat_loss: "Похудение",
-  endurance: "Выносливость",
-  general: "Общая форма",
+export const LOAD_TYPE_LABELS: Record<GeneratorParams["loadType"], string> = {
+  strength: "Силовая",
+  cardio: "Кардио",
 };
 
+export const LEGACY_LOAD_TYPE_LABELS: Record<string, string> = {
+  ...LOAD_TYPE_LABELS,
+  mixed: "Смешанная",
+  stretching: "Растяжка",
+};
+
+export function getLoadTypeLabel(loadType: string): string {
+  return LEGACY_LOAD_TYPE_LABELS[loadType] ?? loadType;
+}
+
+export function getPlannedDurationMinutes(workout: GeneratedWorkout): number {
+  if (workout.estimatedDurationMinutes != null) {
+    return workout.estimatedDurationMinutes;
+  }
+  const legacy = workout.params as LegacyGeneratorParams;
+  if (legacy.durationMinutes != null) {
+    return legacy.durationMinutes;
+  }
+  const intensity = resolveIntensity(workout.params);
+  const loadType = workout.params.loadType ?? "strength";
+  return computeWorkoutDurationWithIntensity(
+    workout.exercises,
+    loadType,
+    intensity
+  );
+}
+
 export const DEFAULT_GENERATOR_PARAMS: GeneratorParams = {
-  goal: "general",
-  durationMinutes: 40,
-  equipment: ["body only", "dumbbell"],
+  intensity: "medium",
+  equipment: ["body only"],
   focus: "full_body",
-  loadType: "mixed",
-  includeWarmup: true,
-  includeCooldown: true,
+  loadType: "strength",
 };
