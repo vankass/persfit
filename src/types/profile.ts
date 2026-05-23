@@ -11,6 +11,11 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface ProfileContextType {
+  user: UserProfile | null;
+  refreshProfile: () => Promise<void>;
+}
+
 export type ExerciseLevel = "beginner" | "intermediate" | "expert";
 
 export function getAllowedExerciseLevels(
