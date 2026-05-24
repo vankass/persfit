@@ -10,7 +10,7 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, desc }: FeatureCardProps) {
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col gap-3">
+    <div className="xl:w-85 bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col gap-3">
       <div className="p-2 bg-slate-50 rounded-xl w-fit border border-slate-100">
         {icon}
       </div>
@@ -22,7 +22,7 @@ function FeatureCard({ icon, title, desc }: FeatureCardProps) {
   );
 }
 
-export default function Home() {
+export default function Welcome() {
   const navigate = useNavigate();
 
   return (

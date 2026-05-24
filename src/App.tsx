@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
-import Home from "./pages/Home";
+import Welcome from "./pages/Welcome";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Generator from "./pages/Generator";
@@ -33,7 +33,7 @@ export default function App() {
     <Routes>
       <Route
         path="/"
-        element={hasProfile ? <Navigate to="/dashboard" /> : <Home />}
+        element={hasProfile ? <Navigate to="/dashboard" /> : <Welcome />}
       />
       <Route
         path="/onboarding"
