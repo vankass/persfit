@@ -23,12 +23,13 @@ let dbPromise: Promise<IDBPDatabase<PersFitDB>> | null = null;
 
 export const initDB = () => {
   if (!dbPromise) {
-    dbPromise = openDB<PersFitDB>(DB_NAME, 2, {
-      upgrade(db, oldVersion) {
+    dbPromise = openDB<PersFitDB>(DB_NAME, 1, {
+      upgrade(db) {
         if (!db.objectStoreNames.contains(PROFILE_STORE)) {
           db.createObjectStore(PROFILE_STORE);
         }
-        if (oldVersion < 2 && !db.objectStoreNames.contains(HISTORY_STORE)) {
+
+        if (!db.objectStoreNames.contains(HISTORY_STORE)) {
           const store = db.createObjectStore(HISTORY_STORE, { keyPath: "id" });
           store.createIndex("by-finished", "finishedAt");
         }
@@ -56,10 +57,7 @@ export const saveWorkoutHistory = async (entry: WorkoutHistoryEntry) => {
 export const getWorkoutHistory = async (): Promise<WorkoutHistoryEntry[]> => {
   const db = await initDB();
   const all = await db.getAllFromIndex(HISTORY_STORE, "by-finished");
-  return all.sort(
-    (a, b) =>
-      new Date(b.finishedAt).getTime() - new Date(a.finishedAt).getTime()
-  );
+  return all.sort((a, b) => b.finishedAt.localeCompare(a.finishedAt));
 };
 
 export const getWorkoutById = async (
