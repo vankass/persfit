@@ -1,9 +1,10 @@
+import { Loader } from "@/components/Loader";
 import { ProfileContext } from "@/hooks/useProfile";
 import { getProfile } from "@/lib/db";
 import type { UserProfile } from "@/types/profile";
 import { useEffect, useState, type ReactNode } from "react";
 
-export function ProfileProvider({children}: {children: ReactNode}) {
+export function ProfileProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,22 +18,18 @@ export function ProfileProvider({children}: {children: ReactNode}) {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     refreshProfile();
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400 font-medium">
-        Загрузка...
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
-    <ProfileContext.Provider value={{user, refreshProfile}}>
+    <ProfileContext.Provider value={{ user, refreshProfile }}>
       {children}
     </ProfileContext.Provider>
   );

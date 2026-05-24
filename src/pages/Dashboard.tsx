@@ -19,6 +19,36 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Loader } from "@/components/Loader";
+
+function StatBox({
+  icon,
+  value,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white p-4 md:p-6 rounded-[24px] md:rounded-[28px] border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow cursor-pointer"
+    >
+      <div className="p-2 bg-slate-50 rounded-xl">{icon}</div>
+      <div className="text-center">
+        <span className="text-2xl md:text-3xl font-black leading-none">
+          {value}
+        </span>
+        <p className="text-[10px] md:text-xs uppercase font-bold text-slate-400 tracking-tighter mt-1">
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -28,40 +58,40 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
 
+  const lastWorkout = history[0] ?? null;
+
+  const totalSeconds = history.reduce(
+    (sum, e) => sum + e.totalDurationSeconds,
+    0
+  );
+  const totalMinutes = Math.floor(totalSeconds / 60);
+
   useEffect(() => {
     const loadData = async () => {
       const [profile, workouts] = await Promise.all([
         getProfile(),
         getWorkoutHistory(),
       ]);
-      if (profile) setUser(profile as UserProfile);
+      if (profile) {
+        setUser(profile as UserProfile);
+      }
       setHistory(workouts);
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      setWeekCount(
-        workouts.filter(
-          (e) => new Date(e.finishedAt).getTime() >= weekAgo
-        ).length
+      const count = workouts.findIndex(
+        (e) => new Date(e.finishedAt).getTime() < weekAgo
       );
+      setWeekCount(count === -1 ? workouts.length : count);
       setLoading(false);
     };
     loadData();
   }, []);
 
-  const lastWorkout = history[0] ?? null;
-  const totalMinutes = history.reduce(
-    (sum, e) => sum + Math.floor(e.totalDurationSeconds / 60),
-    0
-  );
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400 font-medium">
-        Загрузка данных...
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
-    <>
+    <div className="space-y-5 mt-10 sm:mt-0">
       <section className="bg-white rounded-[32px] md:rounded-[40px] p-8 md:p-14 border border-slate-100 shadow-sm relative overflow-hidden">
         <div className="hidden sm:block sm:opacity-[0.1] xl:opacity-[1]">
           <div className="absolute top-[8%] left-[2%] -rotate-12 select-none pointer-events-none">
@@ -101,43 +131,37 @@ export default function Dashboard() {
             onClick={() => {
               navigate("/generator");
             }}
-            className="mt-10 w-full sm:w-auto px-10 py-7 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-bold shadow-lg shadow-blue-100 transition-all active:scale-[0.98]"
+            className="mt-10 w-full sm:w-auto px-10 py-7 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-bold shadow-lg shadow-blue-100 transition-all active:scale-[0.98] cursor-pointer"
           >
-            <Play size={20} className="mr-2 fill-current" />
+            <Play size={20} className="sm:mr-2 fill-current" />
             Начать тренировку
           </Button>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatBox
-          icon={<Flame className="text-orange-500" />}
-          value={String(Math.min(history.length, 99))}
-          label="подряд"
-          onClick={() => navigate("/history")}
-        />
+      <section className="grid grid-cols-3 gap-2 sm:gap-3">
         <StatBox
           icon={<Dumbbell className="text-blue-500" />}
           value={String(history.length)}
           label="всего"
-          onClick={() => navigate("/history")}
+          onClick={() => navigate("/stats")}
         />
         <StatBox
           icon={<Calendar className="text-green-500" />}
           value={String(weekCount)}
           label="в неделю"
-          onClick={() => navigate("/history")}
+          onClick={() => navigate("/stats")}
         />
         <StatBox
           icon={<Clock className="text-purple-500" />}
           value={String(totalMinutes)}
           label="мин всего"
-          onClick={() => navigate("/history")}
+          onClick={() => navigate("/stats")}
         />
       </section>
 
       <section className="w-full">
-        <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl md:rounded-[32px] border border-slate-100 shadow-sm space-y-4 md:space-y-6">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-3xl md:rounded-[32px] border border-slate-100 shadow-sm space-y-4 md:space-y-6">
           <div className="flex items-center justify-between border-b border-slate-50 pb-3 md:pb-4">
             <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest">
               <div className="p-2 bg-slate-50 rounded-lg">
@@ -148,16 +172,18 @@ export default function Dashboard() {
               </div>
             </div>
             <Button
-            onClick={() => {navigate("/history")}}
+              onClick={() => {
+                navigate("/history");
+              }}
               variant="link"
-              className="text-blue-600 font-bold text-xs md:text-sm p-0 h-auto"
+              className="text-blue-600 font-bold text-xs md:text-sm p-0 h-auto cursor-pointer"
             >
               Смотреть всё
             </Button>
           </div>
 
           {lastWorkout ? (
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-left">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 sm:p-4 text-left">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                 Последняя тренировка
               </p>
@@ -183,49 +209,8 @@ export default function Dashboard() {
               </p>
             </div>
           )}
-
-          <Button
-            variant="secondary"
-            disabled={!lastWorkout}
-            className="w-full py-5 md:py-6 rounded-2xl font-bold text-sm md:text-base bg-slate-50 text-slate-700 border border-transparent disabled:text-slate-300"
-            onClick={() => navigate("/generator")}
-          >
-            {lastWorkout
-              ? "Новая тренировка"
-              : "Повторить последнюю программу"}
-          </Button>
         </div>
       </section>
-    </>
-  );
-}
-
-function StatBox({
-  icon,
-  value,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-  onClick?: () => void;
-}) {
-  const navigate = useNavigate();
-
-  return (
-    <div 
-    onClick={onClick ?? (() => navigate("/stats"))}
-    className="bg-white p-4 md:p-6 rounded-[24px] md:rounded-[28px] border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow">
-      <div className="p-2 bg-slate-50 rounded-xl">{icon}</div>
-      <div className="text-center">
-        <span className="text-2xl md:text-3xl font-black leading-none">
-          {value}
-        </span>
-        <p className="text-[10px] md:text-xs uppercase font-bold text-slate-400 tracking-tighter mt-1">
-          {label}
-        </p>
-      </div>
     </div>
   );
 }

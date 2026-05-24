@@ -89,7 +89,7 @@ function Header({ user }: HeaderProps) {
         <div className="rounded-2xl backdrop-blur-sm hidden sm:block">
           <Button
             variant="ghost"
-            className="flex items-center gap-2 px-4 py-3 h-auto bg-white rounded-2xl transition-all hover:bg-white border border-slate-200/50"
+            className="flex items-center gap-2 px-4 py-3 h-auto bg-white rounded-2xl transition-all hover:bg-white border border-slate-200/50 cursor-pointer"
             onClick={() => navigate("/profile")}
           >
             <span className="text-sm font-bold text-slate-900">
