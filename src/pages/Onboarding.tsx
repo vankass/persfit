@@ -15,6 +15,22 @@ import { saveProfile } from "@/lib/db";
 import { useNavigate } from "react-router-dom";
 import type { ProfileGender, ProfileLevel } from "@/types/profile";
 
+const FIELD_STYLES =
+  "w-full rounded-xl bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-blue-400";
+const LABEL_STYLES =
+  "text-sm font-medium flex items-center gap-2 text-slate-600 select-none";
+
+type FieldName = "name" | "gender" | "age" | "weight" | "height" | "level";
+
+const VALIDATION_RULES: Record<FieldName, (v: string) => boolean> = {
+  name: (v) => v.trim().length < 2,
+  gender: (v) => !v,
+  age: (v) => !v || Number(v) < 14 || Number(v) > 100,
+  weight: (v) => !v || Number(v) < 30 || Number(v) > 300,
+  height: (v) => !v || Number(v) < 100 || Number(v) > 250,
+  level: (v) => !v,
+};
+
 interface OnboardingProps {
   onComplete: () => Promise<void>;
 }
@@ -31,41 +47,19 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     level: "",
   });
 
-  type FieldName = keyof typeof formData;
   const [glowFields, setGlowFields] = useState<FieldName[]>([]);
 
-  const fieldStyles =
-    "w-full rounded-xl bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-blue-400";
-  const labelStyles =
-    "text-sm font-medium flex items-center gap-2 text-slate-600 select-none";
-
-  const isInvalid: Record<FieldName, (value: string) => boolean> = {
-    name: (v) => v.trim().length < 2,
-    gender: (v) => !v,
-    age: (v) => {
-      if (!v) return true;
-      const n = Number(v);
-      return !Number.isFinite(n) || n < 14 || n > 100;
-    },
-    weight: (v) => {
-      if (!v) return true;
-      const n = Number(v);
-      return !Number.isFinite(n) || n < 30 || n > 300;
-    },
-    height: (v) => {
-      if (!v) return true;
-      const n = Number(v);
-      return !Number.isFinite(n) || n < 100 || n > 250;
-    },
-    level: (v) => !v,
+  const getFieldClass = (fieldName: FieldName) => {
+    const isError = glowFields.includes(fieldName);
+    return `${FIELD_STYLES} transition-[box-shadow,background-color] duration-200 ring-0 bg-slate-50 ${
+      isError ? "pf-error-glow" : ""
+    }`;
   };
 
-  const getInvalidFields = () => {
-    const invalid: FieldName[] = [];
-    (Object.keys(formData) as FieldName[]).forEach((field) => {
-      if (isInvalid[field](formData[field])) invalid.push(field);
-    });
-    return invalid;
+  const getInvalidFields = (): FieldName[] => {
+    return (Object.keys(formData) as FieldName[]).filter((field) =>
+      VALIDATION_RULES[field](formData[field])
+    );
   };
 
   const triggerGlow = (fields: FieldName[]) => {
@@ -74,16 +68,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       setGlowFields(fields);
       window.setTimeout(() => setGlowFields([]), 650);
     });
-  };
-
-  const getFieldClass = (fieldName: FieldName) => {
-    const shouldGlow = glowFields.includes(fieldName);
-    return [
-      fieldStyles,
-      "transition-[box-shadow,background-color] duration-200",
-      "ring-0 bg-slate-50",
-      shouldGlow ? "pf-error-glow" : "",
-    ].join(" ");
   };
 
   const handleFinish = async () => {
@@ -95,21 +79,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     }
 
     try {
-  await saveProfile({
-    name: formData.name,
-    gender: formData.gender as ProfileGender,  
-    age: Number(formData.age),
-    weight: Number(formData.weight),
-    height: Number(formData.height),
-    level: formData.level as ProfileLevel,     
-    createdAt: new Date().toISOString(),
-  });
-} catch {
-  return;
-}
-
-    await onComplete();
-    navigate("/dashboard");
+      await saveProfile({
+        name: formData.name,
+        gender: formData.gender as ProfileGender,
+        age: Number(formData.age),
+        weight: Number(formData.weight),
+        height: Number(formData.height),
+        level: formData.level as ProfileLevel,
+        createdAt: new Date().toISOString(),
+      });
+      await onComplete();
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Ошибка сохранения профиля:", error);
+      alert("Не удалось сохранить профиль, попробуйте позже");
+    }
   };
 
   return (
@@ -121,10 +105,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-6 sm:px-6">
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className={labelStyles}>
+              <label className={LABEL_STYLES}>
                 <User className="w-4 h-4 text-blue-500" /> Имя
               </label>
               <Input
@@ -139,7 +122,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div className="space-y-3">
-              <label className={labelStyles}>
+              <label className={LABEL_STYLES}>
                 <Users className="w-4 h-4 text-pink-500" /> Пол
               </label>
               <RadioGroup
@@ -200,13 +183,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <label className={labelStyles}>
+              <label className={LABEL_STYLES}>
                 <Scale className="w-4 h-4 text-green-500" /> Вес (кг)
               </label>
               <Input
                 type="number"
-                min="30"
-                max="300"
                 placeholder="30-300"
                 value={formData.weight}
                 onChange={(e) => {
@@ -218,13 +199,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div className="space-y-2">
-              <label className={labelStyles}>
+              <label className={LABEL_STYLES}>
                 <Ruler className="w-4 h-4 text-purple-500" /> Рост (см)
               </label>
               <Input
                 type="number"
-                min="100"
-                max="250"
                 placeholder="100-250"
                 value={formData.height}
                 onChange={(e) => {
@@ -236,13 +215,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div className="space-y-2">
-              <label className={labelStyles}>
+              <label className={LABEL_STYLES}>
                 <Baby className="w-4 h-4 text-orange-500" /> Возраст
               </label>
               <Input
                 type="number"
-                min="14"
-                max="100"
                 placeholder="14-100"
                 value={formData.age}
                 onChange={(e) => {
@@ -255,7 +232,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </div>
 
           <div className="space-y-2">
-            <label className={labelStyles}>
+            <label className={LABEL_STYLES}>
               <Dumbbell className="w-4 h-4 text-slate-700" /> Уровень подготовки
             </label>
             <Select
