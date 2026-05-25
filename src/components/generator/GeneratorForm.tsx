@@ -2,10 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import type { UserProfile } from "@/types/profile";
-import type { GeneratorParams } from "@/types/workout";
+import type { GeneratorParams, TrainingLocation } from "@/types/workout";
 import { DEFAULT_GENERATOR_PARAMS } from "@/lib/workout/workoutGenerator";
 import { translate } from "@/utils/translations";
-import { EQUIPMENT_OPTIONS, MUSCLE_OPTIONS } from "./constants";
+import {
+  ALL_GENERATOR_EQUIPMENT,
+  buildHomeEquipment,
+  getHomeExtrasFromEquipment,
+  HOME_EXTRA_EQUIPMENT,
+  toggleHomeExtra,
+  MUSCLE_OPTIONS,
+} from "./constants";
 import type { MuscleGroup } from "@/types/exercise";
 
 interface GeneratorFormProps {
@@ -40,9 +47,9 @@ const FOCUS_OPTIONS: { value: GeneratorParams["focus"]; label: string }[] = [
   { value: "custom", label: "Выбор мышц" },
 ];
 
-const LOAD_TYPES: { value: GeneratorParams["loadType"]; label: string }[] = [
-  { value: "strength", label: "Силовая" },
-  { value: "cardio", label: "Кардио" },
+const LOCATION_OPTIONS: { value: TrainingLocation; label: string }[] = [
+  { value: "home", label: "Дома" },
+  { value: "gym", label: "В зале" },
 ];
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -79,22 +86,68 @@ function OptionButton({
   );
 }
 
+function EquipmentChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-11 rounded-full px-4 py-2 text-xs font-bold transition-all sm:text-sm ${
+        active
+          ? "bg-blue-600 text-white"
+          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function GeneratorForm({
   profile,
   params,
   onChange,
   onGenerate,
 }: GeneratorFormProps) {
+  const trainingLocation =
+    params.trainingLocation ??
+    (params.equipment.length >= ALL_GENERATOR_EQUIPMENT.length
+      ? "gym"
+      : "home");
+
   const update = (partial: Partial<GeneratorParams>) => {
-    onChange({ ...params, ...partial });
+    onChange({ ...params, loadType: "strength", ...partial });
   };
 
-  const toggleEquipment = (item: string) => {
-    const isSelected = params.equipment.includes(item);
-    const next = isSelected
-      ? params.equipment.filter((e) => e !== item)
-      : [...params.equipment, item];
-    update({ equipment: next });
+  const setLocation = (location: TrainingLocation) => {
+    if (location === "gym") {
+      update({
+        trainingLocation: "gym",
+        equipment: [...ALL_GENERATOR_EQUIPMENT],
+      });
+    } else {
+      update({
+        trainingLocation: "home",
+        equipment: buildHomeEquipment([]),
+      });
+    }
+  };
+
+  const homeExtras = getHomeExtrasFromEquipment(params.equipment);
+
+  const toggleHomeEquipment = (key: string) => {
+    const nextExtras = toggleHomeExtra(homeExtras, key);
+    update({
+      trainingLocation: "home",
+      equipment: buildHomeEquipment(nextExtras),
+    });
   };
 
   const toggleMuscle = (muscle: MuscleGroup) => {
@@ -106,7 +159,8 @@ export function GeneratorForm({
     update({ targetMuscles: next });
   };
 
-  const hasEquipment = params.equipment.length > 0;
+  const hasEquipment =
+    trainingLocation === "gym" || params.equipment.includes("body only");
   const hasValidFocus =
     params.focus !== "custom" || (params.targetMuscles?.length ?? 0) > 0;
   const canGenerate = hasEquipment && hasValidFocus;
@@ -123,21 +177,6 @@ export function GeneratorForm({
       </CardHeader>
 
       <CardContent className="space-y-6 pb-6">
-        <section className="space-y-3">
-          <SectionTitle>Тип тренировки</SectionTitle>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {LOAD_TYPES.map((l) => (
-              <OptionButton
-                key={l.value}
-                active={params.loadType === l.value}
-                onClick={() => update({ loadType: l.value })}
-              >
-                {l.label}
-              </OptionButton>
-            ))}
-          </div>
-        </section>
-
         <section className="space-y-3">
           <SectionTitle>Интенсивность</SectionTitle>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -156,27 +195,44 @@ export function GeneratorForm({
           </div>
         </section>
 
-        <section className="space-y-3">
-          <SectionTitle>Оборудование</SectionTitle>
-          <div className="flex flex-wrap gap-2">
-            {EQUIPMENT_OPTIONS.map((eq) => {
-              const isSelected = params.equipment.includes(eq);
-              return (
-                <button
-                  key={eq}
-                  type="button"
-                  onClick={() => toggleEquipment(eq)}
-                  className={`min-h-11 rounded-full px-4 py-2 text-xs font-bold transition-all sm:text-sm ${
-                    isSelected
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {translate(eq)}
-                </button>
-              );
-            })}
+        <section className="space-y-4">
+          <SectionTitle>Где тренируетесь?</SectionTitle>
+          <div className="grid grid-cols-2 gap-2">
+            {LOCATION_OPTIONS.map((loc) => (
+              <OptionButton
+                key={loc.value}
+                active={trainingLocation === loc.value}
+                onClick={() => setLocation(loc.value)}
+                className="text-center"
+              >
+                {loc.label}
+              </OptionButton>
+            ))}
           </div>
+
+          {trainingLocation === "gym" ? (
+            <p className="text-sm text-slate-500">
+              Учитывается всё оборудование зала
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-slate-500">
+                Что есть дома (свой вес уже учтён)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {HOME_EXTRA_EQUIPMENT.map((item) => (
+                  <EquipmentChip
+                    key={item}
+                    active={homeExtras.includes(item)}
+                    onClick={() => toggleHomeEquipment(item)}
+                  >
+                    {translate(item)}
+                  </EquipmentChip>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!hasEquipment && (
             <p className="text-xs text-amber-600">
               Выберите хотя бы один вариант

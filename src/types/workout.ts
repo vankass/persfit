@@ -7,6 +7,7 @@ export type LegacyWorkoutGoal = "strength" | "fat_loss" | "endurance" | "general
 export type WorkoutIntensity = "low" | "medium" | "high";
 export type WorkoutFocus = "full_body" | "upper" | "lower" | "custom";
 export type LoadType = "strength" | "cardio";
+export type TrainingLocation = "home" | "gym";
 
 /** @deprecated legacy history entries */
 export type LegacyLoadType = LoadType | "stretching" | "mixed";
@@ -16,6 +17,7 @@ export type SessionPhase = "warmup" | "workout" | "cooldown";
 export interface GeneratorParams {
   intensity: WorkoutIntensity;
   equipment: string[];
+  trainingLocation: TrainingLocation;
   focus: WorkoutFocus;
   targetMuscles?: MuscleGroup[];
   loadType: LoadType;

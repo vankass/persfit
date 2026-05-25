@@ -18,6 +18,7 @@ export const LOAD_TYPE_LABELS: Record<GeneratorParams["loadType"], string> = { s
 export const DEFAULT_GENERATOR_PARAMS: GeneratorParams = {
   intensity: "medium",
   equipment: ["body only"],
+  trainingLocation: "home",
   focus: "full_body",
   loadType: "strength",
 };

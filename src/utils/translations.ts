@@ -25,7 +25,7 @@ export const TRANSLATIONS: Record<string, string> = {
   "exercise ball": "Фитбол",
   "e-z curl bar": "EZ-гриф",
   "foam roll": "МФР ролл",
-  "other": "Другое",
+  "other": "Спецоборудование",
 
   // Группы мышц
   "abdominals": "Пресс",
