@@ -22,15 +22,6 @@ interface ProfileActionsProps {
   isMobile?: boolean;
 }
 
-// Вспомогательный компонент для кнопок, чтобы избежать дублирования
-interface ProfileActionsProps {
-  isEditing: boolean;
-  setIsEditing: (v: boolean) => void;
-  handleCancel: () => void;
-  handleSave: () => void;
-  isMobile?: boolean;
-}
-
 function ProfileActions({
   isEditing,
   setIsEditing,
@@ -47,7 +38,7 @@ function ProfileActions({
         }`}
       >
         <Edit2 size={16} />
-        <span>{isMobile ? "Редактировать профиль" : "Редактировать"}</span>
+        <span>{isMobile ? "Редактировать" : "Редактировать профиль"}</span>
       </button>
     );
   }
@@ -254,7 +245,7 @@ export default function Profile() {
             setIsEditing={setIsEditing}
             handleCancel={handleCancel}
             handleSave={handleSave}
-            isMobile={true} 
+            isMobile={true}
           />
         </div>
 

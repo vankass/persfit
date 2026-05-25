@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, Dumbbell, Save } from "lucide-react";
 import type { GeneratedWorkout } from "@/types/workout";
 import type { SessionProgress } from "./WorkoutSessionView";
-import { getSessionLabel } from "@/lib/workoutGenerator";
+import { getSessionLabel } from "@/lib/workout/workoutGenerator";
 
 interface WorkoutSummaryViewProps {
   workout: GeneratedWorkout;
@@ -70,7 +70,9 @@ export function WorkoutSummaryView({
         </div>
         <div className="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
           <Dumbbell className="mx-auto h-6 w-6 text-blue-500" />
-          <p className="mt-2 text-lg font-black text-slate-900">{completion}%</p>
+          <p className="mt-2 text-lg font-black text-slate-900">
+            {completion}%
+          </p>
           <p className="text-xs font-bold uppercase text-slate-400">
             Подходов выполнено
           </p>

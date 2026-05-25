@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import type { Exercise } from "@/types/exercise";
 import type { UserProfile } from "@/types/profile";
 import type {
@@ -14,7 +13,7 @@ import { getProfile, saveWorkoutHistory } from "@/lib/db";
 import {
   DEFAULT_GENERATOR_PARAMS,
   generateWorkout,
-} from "@/lib/workoutGenerator";
+} from "@/lib/workout/workoutGenerator";
 import { GeneratorForm } from "@/components/generator/GeneratorForm";
 import { WorkoutPlanView } from "@/components/generator/WorkoutPlanView";
 import {
@@ -22,24 +21,31 @@ import {
   type SessionProgress,
 } from "@/components/generator/WorkoutSessionView";
 import { WorkoutSummaryView } from "@/components/generator/WorkoutSummaryView";
+import { Loader } from "@/components/Loader";
 
 function initCompletedSets(workout: GeneratedWorkout): CompletedSet[][] {
   return workout.exercises.map((item) =>
     Array.from({ length: item.prescription.sets }, (_, i) => ({
       setIndex: i,
       completed: false,
-    }))
+    })),
   );
+}
+
+function calculateDuration(start: string, end: string): number {
+  const diff = new Date(end).getTime() - new Date(start).getTime();
+  return Math.max(0, Math.floor(diff / 1000));
 }
 
 export default function Generator() {
   const navigate = useNavigate();
+
   const [phase, setPhase] = useState<GeneratorPhase>("wizard");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [params, setParams] = useState<GeneratorParams>(
-    DEFAULT_GENERATOR_PARAMS
+    DEFAULT_GENERATOR_PARAMS,
   );
   const [workout, setWorkout] = useState<GeneratedWorkout | null>(null);
   const [sessionProgress, setSessionProgress] =
@@ -48,25 +54,30 @@ export default function Generator() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      const [p, res] = await Promise.all([
-        getProfile(),
-        fetch("/exercises/exercises.json"),
-      ]);
-      if (p) setProfile(p as UserProfile);
-      if (res.ok) {
-        const data = await res.json();
-        setExercises(data);
+    const loadData = async () => {
+      try {
+        const [p, res] = await Promise.all([
+          getProfile(),
+          fetch("/exercises/exercises.json"),
+        ]);
+
+        if (p) setProfile(p);
+        if (res.ok) {
+          const data = await res.json();
+          setExercises(data);
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    load();
+    loadData();
   }, []);
 
   const handleGenerate = () => {
     if (!profile || exercises.length === 0) return;
-    const generated = generateWorkout(exercises, profile, params);
-    setWorkout(generated);
+    setWorkout(generateWorkout(exercises, profile, params));
     setPhase("plan");
   };
 
@@ -87,37 +98,35 @@ export default function Generator() {
   };
 
   const handleSaveHistory = async () => {
-    if (!workout || !sessionProgress || !finishedAt) return;
+    if (saving || !workout || !sessionProgress || !finishedAt) return;
+
     setSaving(true);
-    const entry: WorkoutHistoryEntry = {
-      id: crypto.randomUUID(),
-      startedAt: sessionProgress.startedAt,
-      finishedAt,
-      planned: workout,
-      completedExercises: workout.exercises.map((item, i) => ({
-        exerciseId: item.exercise.id,
-        sets: sessionProgress.completedSets[i] ?? [],
-      })),
-      totalDurationSeconds: Math.max(
-        0,
-        Math.floor(
-          (new Date(finishedAt).getTime() -
-            new Date(sessionProgress.startedAt).getTime()) /
-            1000
-        )
-      ),
-    };
-    await saveWorkoutHistory(entry);
-    setSaving(false);
-    navigate("/history");
+    try {
+      const entry: WorkoutHistoryEntry = {
+        id: crypto.randomUUID(),
+        startedAt: sessionProgress.startedAt,
+        finishedAt,
+        planned: workout,
+        completedExercises: workout.exercises.map((item, i) => ({
+          exerciseId: item.exercise.id,
+          sets: sessionProgress.completedSets[i] ?? [],
+        })),
+        totalDurationSeconds: calculateDuration(
+          sessionProgress.startedAt,
+          finishedAt,
+        ),
+      };
+
+      await saveWorkoutHistory(entry);
+      navigate("/history");
+    } catch (error) {
+      console.error("Не удалось сохранить тренировку:", error);
+      setSaving(false);
+    }
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    );
+    return <Loader />;
   }
 
   if (!profile) {
@@ -130,45 +139,50 @@ export default function Generator() {
     );
   }
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-3">
-      {phase === "wizard" && (
-        <GeneratorForm
-          profile={profile}
-          params={params}
-          onChange={setParams}
-          onGenerate={handleGenerate}
-        />
-      )}
+  const renderPhase = () => {
+    switch (phase) {
+      case "wizard":
+        return (
+          <GeneratorForm
+            profile={profile}
+            params={params}
+            onChange={setParams}
+            onGenerate={handleGenerate}
+          />
+        );
+      case "plan":
+        return workout ? (
+          <WorkoutPlanView
+            workout={workout}
+            allExercises={exercises}
+            onWorkoutChange={setWorkout}
+            onRegenerate={() => setPhase("wizard")}
+            onStart={handleStartWorkout}
+          />
+        ) : null;
+      case "active":
+        return workout && sessionProgress ? (
+          <WorkoutSessionView
+            workout={workout}
+            progress={sessionProgress}
+            onProgressChange={setSessionProgress}
+            onFinish={handleFinishSession}
+          />
+        ) : null;
+      case "summary":
+        return workout && sessionProgress && finishedAt ? (
+          <WorkoutSummaryView
+            workout={workout}
+            progress={sessionProgress}
+            finishedAt={finishedAt}
+            onSave={handleSaveHistory}
+            saving={saving}
+          />
+        ) : null;
+      default:
+        return null;
+    }
+  };
 
-      {phase === "plan" && workout && (
-        <WorkoutPlanView
-          workout={workout}
-          allExercises={exercises}
-          onWorkoutChange={setWorkout}
-          onRegenerate={() => setPhase("wizard")}
-          onStart={handleStartWorkout}
-        />
-      )}
-
-      {phase === "active" && workout && sessionProgress && (
-        <WorkoutSessionView
-          workout={workout}
-          progress={sessionProgress}
-          onProgressChange={setSessionProgress}
-          onFinish={handleFinishSession}
-        />
-      )}
-
-      {phase === "summary" && workout && sessionProgress && finishedAt && (
-        <WorkoutSummaryView
-          workout={workout}
-          progress={sessionProgress}
-          finishedAt={finishedAt}
-          onSave={handleSaveHistory}
-          saving={saving}
-        />
-      )}
-    </div>
-  );
+  return <div className="mx-auto max-w-3xl space-y-3">{renderPhase()}</div>;
 }

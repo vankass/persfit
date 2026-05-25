@@ -7,7 +7,9 @@ import {
 } from "lucide-react";
 import { deleteWorkoutHistory, getWorkoutHistory } from "@/lib/db";
 import type { WorkoutHistoryEntry } from "@/types/workout";
-import { getPlannedDurationMinutes, getSessionLabel } from "@/lib/workoutGenerator";
+import {
+  getSessionLabel,
+} from "@/lib/workout/workoutGenerator";
 import {
   Dialog,
   DialogContent,
@@ -159,7 +161,7 @@ export default function History() {
                 </DialogTitle>
               </DialogHeader>
               <p className="text-sm text-slate-500">
-                ≈ {getPlannedDurationMinutes(selected.planned)} мин · Выполнено{" "}
+                ≈ {selected.planned.estimatedDurationMinutes ?? 0} мин · Выполнено{" "}
                 {completionPercent(selected)}% подходов
               </p>
               <ul className="mt-4 space-y-3">
@@ -175,8 +177,8 @@ export default function History() {
                         {item.exercise.name}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {translate(item.exercise.primaryMuscles[0])} ·{" "}
-                        {done}/{item.prescription.sets} подходов
+                        {translate(item.exercise.primaryMuscles[0])} · {done}/
+                        {item.prescription.sets} подходов
                       </p>
                     </li>
                   );

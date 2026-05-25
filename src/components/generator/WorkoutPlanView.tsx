@@ -11,10 +11,9 @@ import type { Exercise } from "@/types/exercise";
 import type { GeneratedWorkout, PlannedExercise } from "@/types/workout";
 import { translate } from "@/utils/translations";
 import {
-  getPlannedDurationMinutes,
   getSessionLabel,
   recalculateWorkoutDuration,
-} from "@/lib/workoutGenerator";
+} from "@/lib/workout/workoutGenerator";
 import {
   buildCandidatePoolForAlternatives,
   getAlternatives,
@@ -71,7 +70,7 @@ export function WorkoutPlanView({
         </h2>
         <p className="mt-1 text-sm text-slate-500">
           {getSessionLabel(workout.params)} · ≈{" "}
-          {getPlannedDurationMinutes(workout)} мин · {workout.exercises.length}{" "}
+          {workout.estimatedDurationMinutes ?? 0} мин · {workout.exercises.length}{" "}
           упражнений
         </p>
         <p className="mt-1 text-xs text-slate-400">

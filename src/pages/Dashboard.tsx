@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { getProfile, getWorkoutHistory } from "@/lib/db";
 import type { UserProfile } from "@/types/profile";
 import type { WorkoutHistoryEntry } from "@/types/workout";
-import { getSessionLabel } from "@/lib/workoutGenerator";
+import { getSessionLabel } from "@/lib/workout/workoutGenerator";
 import {
   History,
   Clock,
