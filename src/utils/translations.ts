@@ -1,4 +1,4 @@
-export const EXERCISE_TRANSLATIONS: Record<string, string> = {
+export const TRANSLATIONS: Record<string, string> = {
   // Уровни сложности
   "beginner": "Новичок",
   "intermediate": "Средний",
@@ -53,15 +53,15 @@ export const EXERCISE_TRANSLATIONS: Record<string, string> = {
   // Усилия
   "pull": "Тяга",
   "push": "Жим",
-  "static": "Статика"
+  "static": "Статика",
+
+  //Пол
+  "male": "Мужчина",
+  "female": "Женщина"
 };
 
-/**
- * Функция-помощник для перевода.
- * Если перевода нет, возвращает исходное слово.
- */
 export const translate = (key: string | null | undefined): string => {
   if (!key) return "Не указано";
   const lowerKey = key.toLowerCase();
-  return EXERCISE_TRANSLATIONS[lowerKey] || key;
+  return TRANSLATIONS[lowerKey] || key;
 };

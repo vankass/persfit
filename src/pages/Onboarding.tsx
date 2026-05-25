@@ -23,7 +23,7 @@ const LABEL_STYLES =
 type FieldName = "name" | "gender" | "age" | "weight" | "height" | "level";
 
 const VALIDATION_RULES: Record<FieldName, (v: string) => boolean> = {
-  name: (v) => v.trim().length < 2,
+  name: (v) => v.trim().length < 2 || v.trim().length > 15,
   gender: (v) => !v,
   age: (v) => !v || Number(v) < 14 || Number(v) > 100,
   weight: (v) => !v || Number(v) < 30 || Number(v) > 300,
@@ -113,6 +113,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <Input
                 placeholder="Как тебя зовут?"
                 value={formData.name}
+                maxLength={15}
                 onChange={(e) => {
                   const value = e.target.value;
                   setFormData((prev) => ({ ...prev, name: value }));
@@ -189,6 +190,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <Input
                 type="number"
                 placeholder="30-300"
+                min={30}
+                max={300}
                 value={formData.weight}
                 onChange={(e) => {
                   const value = e.target.value;

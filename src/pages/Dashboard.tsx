@@ -73,7 +73,7 @@ export default function Dashboard() {
         getWorkoutHistory(),
       ]);
       if (profile) {
-        setUser(profile as UserProfile);
+        setUser(profile);
       }
       setHistory(workouts);
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;

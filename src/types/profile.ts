@@ -1,4 +1,4 @@
-export type ProfileLevel = "beginner" | "intermediate" | "advanced";
+export type ProfileLevel = "beginner" | "intermediate" | "expert";
 export type ProfileGender = "male" | "female";
 
 export interface UserProfile {
@@ -26,7 +26,7 @@ export function getAllowedExerciseLevels(
       return ["beginner"];
     case "intermediate":
       return ["beginner", "intermediate"];
-    case "advanced":
+    case "expert":
       return ["beginner", "intermediate", "expert"];
     default:
       return ["beginner"];
