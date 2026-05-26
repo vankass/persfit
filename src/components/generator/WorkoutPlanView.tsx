@@ -6,7 +6,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeftRight, Play, RefreshCw, Timer } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  Play,
+  RefreshCw,
+  Timer,
+} from "lucide-react";
 import type { Exercise } from "@/types/exercise";
 import type { GeneratedWorkout, PlannedExercise } from "@/types/workout";
 import { translate } from "@/utils/translations";
@@ -24,18 +30,21 @@ interface WorkoutPlanViewProps {
   workout: GeneratedWorkout;
   allExercises: Exercise[];
   onWorkoutChange: (workout: GeneratedWorkout) => void;
-  onRegenerate: () => void;
   onStart: () => void;
+  onBack: () => void;
 }
 
 export function WorkoutPlanView({
   workout,
   allExercises,
   onWorkoutChange,
-  onRegenerate,
   onStart,
+  onBack,
 }: WorkoutPlanViewProps) {
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
+  const [seenIds, setSeenIds] = useState<Set<string>>(() => {
+    return new Set(workout.exercises.map((e) => e.exercise.id));
+  });
 
   const pool = buildCandidatePoolForAlternatives(
     allExercises,
@@ -43,52 +52,105 @@ export function WorkoutPlanView({
     workout.params.equipment
   );
 
-  const excludeIds = new Set(workout.exercises.map((e) => e.exercise.id));
+  const currentScreenIds = new Set(workout.exercises.map((e) => e.exercise.id));
 
   const handleReplace = (index: number, newExercise: Exercise) => {
     const updated = workout.exercises.map((item, i) =>
       i === index ? { ...item, exercise: newExercise } : item
     );
+
+    setSeenIds((prev) => {
+      const next = new Set(prev);
+      next.add(newExercise.id);
+      return next;
+    });
+
     onWorkoutChange(
       recalculateWorkoutDuration({ ...workout, exercises: updated })
     );
     setReplaceIndex(null);
   };
 
+  const handleRegenerateAll = () => {
+    const localExcludeIds = new Set(seenIds);
+    const newlyPickedIds: string[] = [];
+
+    const updatedExercises = workout.exercises.map((item) => {
+      const alts = getAlternatives(item.exercise, pool, localExcludeIds, 1);
+
+      if (alts.length > 0) {
+        const chosen = alts[0];
+        localExcludeIds.add(chosen.id);
+        newlyPickedIds.push(chosen.id);
+        return { ...item, exercise: chosen };
+      }
+
+      return item;
+    });
+
+    if (newlyPickedIds.length > 0) {
+      setSeenIds((prev) => {
+        const next = new Set(prev);
+        newlyPickedIds.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+
+    onWorkoutChange(
+      recalculateWorkoutDuration({ ...workout, exercises: updatedExercises })
+    );
+  };
+
   const replacingItem =
     replaceIndex !== null ? workout.exercises[replaceIndex] : null;
   const alternatives =
     replacingItem != null
-      ? getAlternatives(replacingItem.exercise, pool, excludeIds)
+      ? getAlternatives(replacingItem.exercise, pool, currentScreenIds)
       : [];
 
   return (
     <div className="space-y-4">
       <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
-        <h2 className="text-xl font-black text-slate-900 sm:text-2xl">
-          Ваш план
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          {getSessionLabel(workout.params)} · ≈{" "}
-          {workout.estimatedDurationMinutes ?? 0} мин · {workout.exercises.length}{" "}
-          упражнений
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-xl border border-slate-100 text-slate-500 hover:bg-slate-50"
+            onClick={onBack}
+            title="Вернуться к параметрам"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-xl font-black text-slate-900 sm:text-2xl">
+              Ваш план
+            </h2>
+            <p className="text-sm text-slate-500">
+              {getSessionLabel(workout.params)} · ≈{" "}
+              {workout.estimatedDurationMinutes ?? 0} мин ·{" "}
+              {workout.exercises.length} упражнений
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs text-slate-400">
           Перед и после тренировки — видео разминки и заминки (~10–12 мин)
         </p>
+
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             type="button"
             variant="outline"
-            className="min-h-12 rounded-2xl"
-            onClick={onRegenerate}
+            className="min-h-12 rounded-2xl border-slate-200 text-slate-700 font-semibold"
+            onClick={handleRegenerateAll}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Перегенерировать
+            Перегенерировать всё
           </Button>
           <Button
             type="button"
-            className="min-h-12 rounded-2xl bg-blue-600 font-bold hover:bg-blue-700"
+            className="min-h-12 rounded-2xl bg-blue-600 font-bold hover:bg-blue-700 flex-1 sm:flex-initial"
             onClick={onStart}
           >
             <Play className="mr-2 h-4 w-4 fill-current" />
@@ -116,12 +178,15 @@ export function WorkoutPlanView({
           <DialogHeader>
             <DialogTitle>Заменить упражнение</DialogTitle>
             <DialogDescription>
-              Заменить упражнение на альтернативное
+              Заменить упражнение на альтернативное с другим типом оборудования
             </DialogDescription>
           </DialogHeader>
           {replacingItem && (
-            <p className="text-sm text-slate-500">
-              Сейчас: {replacingItem.exercise.name}
+            <p className="text-sm font-medium text-slate-500">
+              Сейчас:{" "}
+              <span className="text-slate-800">
+                {replacingItem.exercise.name}
+              </span>
             </p>
           )}
           <div className="space-y-2">
@@ -183,7 +248,7 @@ function ExercisePlanCard({
         <img
           src={`/exercises/images/${img}`}
           alt=""
-          className="h-20 w-20 shrink-0 rounded-xl object-cover bg-slate-50"
+          className="h-20 w-20 shrink-0 rounded-xl object-cover bg-slate-55"
         />
       ) : (
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-300">

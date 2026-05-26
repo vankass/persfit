@@ -1,12 +1,9 @@
 import type { Exercise } from "@/types/exercise";
 import type { ExerciseLevel } from "@/types/profile";
 import { getAllowedExerciseLevels } from "@/types/profile";
+import { getPopularityScore } from "@/lib/workout/exercisePopularity";
 
-const LEVEL_ORDER: ExerciseLevel[] = [
-  "beginner",
-  "intermediate",
-  "expert",
-];
+const LEVEL_ORDER: ExerciseLevel[] = ["beginner", "intermediate", "expert"];
 
 function levelDistance(a: ExerciseLevel, b: ExerciseLevel): number {
   return Math.abs(LEVEL_ORDER.indexOf(a) - LEVEL_ORDER.indexOf(b));
@@ -41,11 +38,7 @@ export function getAlternatives(
       sharesPrimaryMuscle(ex, exercise)
   );
 
-  const sorted = [...candidates].sort((a, b) => {
-    const equipA = a.equipment === exercise.equipment ? 0 : 1;
-    const equipB = b.equipment === exercise.equipment ? 0 : 1;
-    if (equipA !== equipB) return equipA - equipB;
-
+  const sortedCandidates = [...candidates].sort((a, b) => {
     const mechA = mechanicScore(a, exercise);
     const mechB = mechanicScore(b, exercise);
     if (mechA !== mechB) return mechA - mechB;
@@ -56,10 +49,35 @@ export function getAlternatives(
 
     const levelA = levelDistance(a.level, exercise.level);
     const levelB = levelDistance(b.level, exercise.level);
-    return levelA - levelB;
+    if (levelA !== levelB) return levelA - levelB;
+
+    return getPopularityScore(a.id) - getPopularityScore(b.id);
   });
 
-  return sorted.slice(0, limit);
+  const finalAlternatives: Exercise[] = [];
+  const seenEquipment = new Set<string>();
+
+  for (const ex of sortedCandidates) {
+    if (finalAlternatives.length >= limit) break;
+
+    const eq = ex.equipment || "body only";
+    if (!seenEquipment.has(eq)) {
+      finalAlternatives.push(ex);
+      seenEquipment.add(eq);
+    }
+  }
+
+  if (finalAlternatives.length < limit) {
+    for (const ex of sortedCandidates) {
+      if (finalAlternatives.length >= limit) break;
+
+      if (!finalAlternatives.some((fav) => fav.id === ex.id)) {
+        finalAlternatives.push(ex);
+      }
+    }
+  }
+
+  return finalAlternatives;
 }
 
 export function buildCandidatePoolForAlternatives(

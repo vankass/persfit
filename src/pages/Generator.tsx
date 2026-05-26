@@ -28,7 +28,7 @@ function initCompletedSets(workout: GeneratedWorkout): CompletedSet[][] {
     Array.from({ length: item.prescription.sets }, (_, i) => ({
       setIndex: i,
       completed: false,
-    })),
+    }))
   );
 }
 
@@ -45,7 +45,7 @@ export default function Generator() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [params, setParams] = useState<GeneratorParams>(
-    DEFAULT_GENERATOR_PARAMS,
+    DEFAULT_GENERATOR_PARAMS
   );
   const [workout, setWorkout] = useState<GeneratedWorkout | null>(null);
   const [sessionProgress, setSessionProgress] =
@@ -113,7 +113,7 @@ export default function Generator() {
         })),
         totalDurationSeconds: calculateDuration(
           sessionProgress.startedAt,
-          finishedAt,
+          finishedAt
         ),
       };
 
@@ -156,8 +156,8 @@ export default function Generator() {
             workout={workout}
             allExercises={exercises}
             onWorkoutChange={setWorkout}
-            onRegenerate={() => setPhase("wizard")}
             onStart={handleStartWorkout}
+            onBack={() => setPhase("wizard")} 
           />
         ) : null;
       case "active":

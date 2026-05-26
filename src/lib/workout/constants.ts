@@ -2,8 +2,26 @@ import type { MuscleGroup } from "@/types/exercise";
 import type { GeneratorParams, WorkoutIntensity } from "@/types/workout";
 
 export const UPPER_MUSCLES: MuscleGroup[] = ["chest", "shoulders", "lats", "middle back", "lower back", "biceps", "triceps", "traps", "forearms"];
-export const LOWER_MUSCLES: MuscleGroup[] = ["quadriceps", "hamstrings", "glutes", "calves", "abdominals", "abductors", "adductors"];
-export const FULL_BODY_ROTATION: MuscleGroup[] = ["chest", "lats", "quadriceps", "shoulders", "hamstrings", "abdominals", "glutes", "triceps", "biceps", "calves"];
+export const LOWER_MUSCLES: MuscleGroup[] = ["quadriceps", "hamstrings", "glutes", "calves", "abductors", "adductors"];
+export const LEG_MUSCLES: MuscleGroup[] = ["quadriceps", "hamstrings", "glutes", "calves", "abductors", "adductors"];
+export const CORE_MUSCLES: MuscleGroup[] = ["abdominals"];
+
+export const FULL_BODY_ROTATION: MuscleGroup[] = [
+  "chest",      
+  "lats",       
+  "hamstrings",
+  "quadriceps", 
+  "shoulders",  
+  "abdominals" 
+];
+
+export type MuscleRegion = "legs" | "core" | "upper";
+
+export function getMuscleRegion(primary: MuscleGroup): MuscleRegion {
+  if (LEG_MUSCLES.includes(primary)) return "legs";
+  if (CORE_MUSCLES.includes(primary)) return "core";
+  return "upper";
+}
 
 export const SMALL_MUSCLE_GROUPS: MuscleGroup[] = ["biceps", "triceps", "shoulders", "abdominals", "calves", "forearms"];
 
