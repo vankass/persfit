@@ -7,6 +7,8 @@ export const HOME_EXTRA_EQUIPMENT = [
   "kettlebells",
   "bands",
   "barbell",
+  "medicine ball",
+  "exercise ball",
 ] as const;
 
 export const ALL_GENERATOR_EQUIPMENT: string[] = [
@@ -15,8 +17,6 @@ export const ALL_GENERATOR_EQUIPMENT: string[] = [
   "e-z curl bar",
   "cable",
   "machine",
-  "medicine ball",
-  "exercise ball",
   "other",
 ];
 
