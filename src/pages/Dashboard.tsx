@@ -1,25 +1,23 @@
 import { Button } from "@/components/ui/button";
-import { getProfile, getWorkoutHistory } from "@/lib/db";
-import type { UserProfile } from "@/types/profile";
-import type { WorkoutHistoryEntry } from "@/types/workout";
-import { getSessionLabel } from "@/lib/workout/workoutGenerator";
 import {
-  History,
-  Clock,
-  RotateCcw,
   Calendar,
+  Clock,
   Dumbbell,
   Flame,
+  History,
   Play,
+  RotateCcw,
   Zap,
   Trophy,
   Timer,
   Target,
   LucideActivity,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader } from "@/components/Loader";
+import { useProfile } from "@/hooks/useProfile";
+import { useDashboardSummary } from "@/hooks/useDashboardSummary";
+import { getSessionLabel } from "@/lib/workout/workoutGenerator";
 
 function StatBox({
   icon,
@@ -51,40 +49,10 @@ function StatBox({
 }
 
 export default function Dashboard() {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [history, setHistory] = useState<WorkoutHistoryEntry[]>([]);
-  const [weekCount, setWeekCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-
+  const { user } = useProfile();
+  const { history, weekCount, lastWorkout, totalMinutes, loading } =
+    useDashboardSummary();
   const navigate = useNavigate();
-
-  const lastWorkout = history[0] ?? null;
-
-  const totalSeconds = history.reduce(
-    (sum, e) => sum + e.totalDurationSeconds,
-    0
-  );
-  const totalMinutes = Math.floor(totalSeconds / 60);
-
-  useEffect(() => {
-    const loadData = async () => {
-      const [profile, workouts] = await Promise.all([
-        getProfile(),
-        getWorkoutHistory(),
-      ]);
-      if (profile) {
-        setUser(profile);
-      }
-      setHistory(workouts);
-      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const count = workouts.findIndex(
-        (e) => new Date(e.finishedAt).getTime() < weekAgo
-      );
-      setWeekCount(count === -1 ? workouts.length : count);
-      setLoading(false);
-    };
-    loadData();
-  }, []);
 
   if (loading) {
     return <Loader />;
@@ -172,9 +140,7 @@ export default function Dashboard() {
               </div>
             </div>
             <Button
-              onClick={() => {
-                navigate("/history");
-              }}
+              onClick={() => navigate("/history")}
               variant="link"
               className="text-blue-600 font-bold text-xs md:text-sm p-0 h-auto cursor-pointer"
             >

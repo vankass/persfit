@@ -1,4 +1,4 @@
-export const TRANSLATIONS: Record<string, string> = {
+const TRANSLATIONS: Record<string, string> = {
   // Уровни сложности
   "beginner": "Новичок",
   "intermediate": "Средний",

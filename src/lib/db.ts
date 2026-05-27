@@ -11,10 +11,7 @@ const PROFILE_KEY = "current_user";
 const DB_VERSION = 2;
 
 interface PersFitDB extends DBSchema {
-  [PROFILE_STORE]: {
-    key: string;
-    value: UserProfile;
-  };
+  [PROFILE_STORE]: { key: string; value: UserProfile };
   [HISTORY_STORE]: {
     key: string;
     value: WorkoutHistoryEntry;
@@ -32,21 +29,19 @@ let dbPromise: Promise<IDBPDatabase<PersFitDB>> | null = null;
 export const initDB = () => {
   if (!dbPromise) {
     dbPromise = openDB<PersFitDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
-        if (!db.objectStoreNames.contains(PROFILE_STORE)) {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(PROFILE_STORE))
           db.createObjectStore(PROFILE_STORE);
-        }
-
         if (!db.objectStoreNames.contains(HISTORY_STORE)) {
-          const store = db.createObjectStore(HISTORY_STORE, { keyPath: "id" });
-          store.createIndex("by-finished", "finishedAt");
+          db.createObjectStore(HISTORY_STORE, { keyPath: "id" }).createIndex(
+            "by-finished",
+            "finishedAt"
+          );
         }
-
         if (!db.objectStoreNames.contains(MEASUREMENTS_STORE)) {
-          const store = db.createObjectStore(MEASUREMENTS_STORE, {
+          db.createObjectStore(MEASUREMENTS_STORE, {
             keyPath: "id",
-          });
-          store.createIndex("by-recorded", "recordedAt");
+          }).createIndex("by-recorded", "recordedAt");
         }
       },
     });
@@ -59,29 +54,22 @@ async function getLastMeasurement(): Promise<BodyMeasurement | undefined> {
   return all[all.length - 1];
 }
 
-function measurementsEqual(
+const measurementsEqual = (
   a: { weight: number; height: number },
   b: { weight: number; height: number }
-): boolean {
-  return a.weight === b.weight && a.height === b.height;
-}
+) => a.weight === b.weight && a.height === b.height;
 
-export const saveBodyMeasurement = async (
-  measurement: BodyMeasurement
-): Promise<void> => {
+export const saveBodyMeasurement = async (measurement: BodyMeasurement) => {
   const db = await initDB();
   await db.put(MEASUREMENTS_STORE, measurement);
 };
 
 export const getBodyMeasurements = async (): Promise<BodyMeasurement[]> => {
   const db = await initDB();
-  const all = await db.getAllFromIndex(MEASUREMENTS_STORE, "by-recorded");
-  return all.sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
+  return db.getAllFromIndex(MEASUREMENTS_STORE, "by-recorded");
 };
 
-export const seedBodyMeasurementFromProfile = async (
-  profile: UserProfile
-): Promise<void> => {
+export const seedBodyMeasurementFromProfile = async (profile: UserProfile) => {
   const existing = await getBodyMeasurements();
   if (existing.length > 0) return;
 
@@ -99,9 +87,7 @@ export const saveProfile = async (profileData: UserProfile) => {
 
   await db.put(PROFILE_STORE, profileData, PROFILE_KEY);
 
-  const shouldRecord =
-    !previous ||
-    !measurementsEqual(previous, profileData);
+  const shouldRecord = !previous || !measurementsEqual(previous, profileData);
 
   if (shouldRecord) {
     const last = await getLastMeasurement();
@@ -129,17 +115,10 @@ export const saveWorkoutHistory = async (entry: WorkoutHistoryEntry) => {
 export const getWorkoutHistory = async (): Promise<WorkoutHistoryEntry[]> => {
   const db = await initDB();
   const all = await db.getAllFromIndex(HISTORY_STORE, "by-finished");
-  return all.sort((a, b) => b.finishedAt.localeCompare(a.finishedAt));
+  return all.reverse();
 };
 
-export const getWorkoutById = async (
-  id: string
-): Promise<WorkoutHistoryEntry | undefined> => {
-  const db = await initDB();
-  return db.get(HISTORY_STORE, id);
-};
-
-export const deleteWorkoutHistory = async (id: string): Promise<void> => {
+export const deleteWorkoutHistory = async (id: string) => {
   const db = await initDB();
   await db.delete(HISTORY_STORE, id);
 };

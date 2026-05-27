@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Exercise } from "@/types/exercise";
 import type { GeneratedWorkout, PlannedExercise } from "@/types/workout";
-import { translate } from "@/utils/translations";
+import { translate } from "@/lib/translations";
 import {
   getSessionLabel,
   recalculateWorkoutDuration,

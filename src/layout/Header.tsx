@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/useProfile";
 import {
   BookOpen,
   FileChartColumn,
@@ -12,17 +13,9 @@ import {
 import { useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
-export interface HeaderUser {
-  name?: string;
-  gender?: string;
-}
-
-interface HeaderProps {
-  user: HeaderUser | null;
-}
-
-function Header({ user }: HeaderProps) {
+function Header() {
   const navigate = useNavigate();
+  const { user } = useProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const links = useMemo(
@@ -97,7 +90,7 @@ function Header({ user }: HeaderProps) {
             </span>
             <div className="flex items-center justify-center p-1.5 rounded-lg ">
               <UserRound
-                className={`w-4 h-4  ${
+                className={`w-4 h-4 ${
                   user?.gender === "male" ? "text-blue-600" : "text-pink-500"
                 }`}
               />

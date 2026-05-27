@@ -1,58 +1,18 @@
-import { useEffect, useState } from "react";
 import { Loader } from "@/components/Loader";
-import {
-  getProfile,
-  getWorkoutHistory,
-  getBodyMeasurements,
-  seedBodyMeasurementFromProfile,
-} from "@/lib/db";
-import type { UserProfile } from "@/types/profile";
-import type { WorkoutHistoryEntry } from "@/types/workout";
-import type { BodyMeasurement } from "@/types/measurement";
 import { StatsSummaryRow } from "@/components/stats/StatsSummaryRow";
 import { AnthropometrySection } from "@/components/stats/AnthropometrySection";
-import { WorkoutCharts } from "@/components/stats/WorkoutCharts";
-import { BodyMetricsChart } from "@/components/stats/BodyMetricsChart";
-import {
-  aggregateByWeek,
-  buildWorkoutSummary,
-  buildMetricSeries,
-} from "@/lib/stats/workoutAggregates";
+import { ActivityCalendar } from "@/components/stats/ActivityCalendar"; // Импортируем календарь
+import { buildWorkoutSummary } from "@/lib/stats/workoutAggregates";
+import { useStatsData } from "@/hooks/useStatsData";
 
 export default function Stats() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [history, setHistory] = useState<WorkoutHistoryEntry[]>([]);
-  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      const [userProfile, workouts] = await Promise.all([
-        getProfile(),
-        getWorkoutHistory(),
-      ]);
-
-      if (userProfile) {
-        await seedBodyMeasurementFromProfile(userProfile);
-      }
-
-      const bodyMeasurements = await getBodyMeasurements();
-
-      setProfile(userProfile ?? null);
-      setHistory(workouts);
-      setMeasurements(bodyMeasurements);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const { profile, history, loading } = useStatsData();
 
   if (loading) {
     return <Loader />;
   }
 
   const summary = buildWorkoutSummary(history);
-  const weeks = aggregateByWeek(history);
-  const metricSeries = buildMetricSeries(measurements, history);
 
   return (
     <div className="space-y-5 pb-12">
@@ -77,9 +37,7 @@ export default function Stats() {
         </section>
       )}
 
-      <WorkoutCharts weeks={weeks} />
-
-      <BodyMetricsChart data={metricSeries} />
+      <ActivityCalendar history={history} />
     </div>
   );
 }

@@ -13,13 +13,12 @@ import type {
 
 import {
   INTENSITY_LABELS,
-  LOAD_TYPE_LABELS,
   FULL_BODY_ROTATION,
   getMuscleRegion,
   type MuscleRegion,
   BUDGET_MAX_SECONDS,
 } from "./constants";
-import { getPopularityBonus, getPopularityScore } from "./exercisePopularity";
+import { getPopularityBonus } from "./exercisePopularity";
 import { computeWorkoutDurationMinutes, sumPlannedSeconds } from "./timeUtils";
 import { getTargetMuscles, buildPrescription } from "./prescription";
 
@@ -27,16 +26,8 @@ export function getIntensityLabel(intensity: WorkoutIntensity): string {
   return INTENSITY_LABELS[intensity] ?? intensity;
 }
 
-export function getLoadTypeLabel(
-  loadType: GeneratorParams["loadType"]
-): string {
-  return LOAD_TYPE_LABELS[loadType] ?? loadType;
-}
-
 export const getSessionLabel = (params: GeneratorParams): string =>
-  `${getLoadTypeLabel(params.loadType)} · ${getIntensityLabel(
-    params.intensity
-  )}`;
+  `Силовая · ${getIntensityLabel(params.intensity)}`;
 
 export function recalculateWorkoutDuration(
   workout: GeneratedWorkout
@@ -50,34 +41,29 @@ export function recalculateWorkoutDuration(
   };
 }
 
-export function filterExercises(
+function filterExercises(
   all: Exercise[],
   profile: UserProfile,
   params: GeneratorParams
 ): Exercise[] {
   const allowedLevels = getAllowedExerciseLevels(profile.level);
-  const categories =
-    params.loadType === "cardio"
-      ? ["cardio", "plyometrics"]
-      : ["strength", "powerlifting"];
   const targetMuscles = getTargetMuscles(params);
 
   return all.filter((ex) => {
     if (!allowedLevels.includes(ex.level)) return false;
     if (ex.primaryMuscles.includes("neck") || ex.category === "stretching")
       return false;
-    if (
-      profile.age >= 50 &&
-      (ex.category === "plyometrics" || ex.category === "strongman")
-    )
-      return false;
-    if (!categories.includes(ex.category)) return false;
+
+    // Исключаем кардио-активности, оставляем только силовые категории
+    if (!["strength", "powerlifting"].includes(ex.category)) return false;
+
     if (
       params.equipment.length > 0 &&
       ex.equipment &&
       !params.equipment.includes(ex.equipment)
-    )
+    ) {
       return false;
+    }
 
     if (params.focus !== "full_body") {
       if (!ex.primaryMuscles.some((m) => targetMuscles.includes(m)))
@@ -93,12 +79,7 @@ function scoreExercise(
   lastForce: string | null
 ): number {
   let score = 0;
-  if (
-    params.loadType === "strength" &&
-    params.intensity === "high" &&
-    ex.mechanic === "compound"
-  )
-    score += 3;
+  if (params.intensity === "high" && ex.mechanic === "compound") score += 3;
   else if (ex.mechanic === "compound") score += 1;
   if (ex.force && ex.force !== lastForce) score += 2;
 
@@ -106,7 +87,7 @@ function scoreExercise(
     if (ex.equipment === "barbell") score += 6;
     if (ex.equipment === "machine") score += 5;
     if (ex.equipment === "dumbbell") score += 5;
-    if (ex.equipment === "body only") score -= 4; 
+    if (ex.equipment === "body only") score -= 4;
   } else if (params.trainingLocation === "home") {
     if (ex.equipment === "body only") score += 5;
     if (ex.equipment === "bands") score += 4;
@@ -119,18 +100,7 @@ function scoreExercise(
 
 type RegionCounts = Record<MuscleRegion, number>;
 
-function emptyRegionCounts(): RegionCounts {
-  return { legs: 0, core: 0, upper: 0 };
-}
-
-function countRegions(exercises: Exercise[]): RegionCounts {
-  const counts = emptyRegionCounts();
-  for (const ex of exercises) {
-    const region = getMuscleRegion(ex.primaryMuscles[0]);
-    counts[region] += 1;
-  }
-  return counts;
-}
+const emptyRegionCounts = (): RegionCounts => ({ legs: 0, core: 0, upper: 0 });
 
 function passesFullBodyRegionCap(
   ex: Exercise,
@@ -142,128 +112,12 @@ function passesFullBodyRegionCap(
   return true;
 }
 
-function compareExercises(
+const compareExercises = (
   a: Exercise,
   b: Exercise,
   params: GeneratorParams,
   lastForce: string | null
-): number {
-  return (
-    scoreExercise(b, params, lastForce) - scoreExercise(a, params, lastForce)
-  );
-}
-
-const REPLACE_PRIORITY_MUSCLES: MuscleGroup[] = [
-  "calves",
-  "forearms",
-  "biceps",
-  "triceps",
-];
-
-function findReplacementIndex(
-  picked: Exercise[],
-  regionCount: RegionCounts
-): number {
-  if (regionCount.legs > 1) {
-    let worstIndex = -1;
-    let lowestPopularity = Infinity;
-    picked.forEach((ex, index) => {
-      if (getMuscleRegion(ex.primaryMuscles[0]) !== "legs") return;
-      const pop = getPopularityScore(ex.id);
-      if (pop < lowestPopularity) {
-        lowestPopularity = pop;
-        worstIndex = index;
-      }
-    });
-    if (worstIndex >= 0) return worstIndex;
-  }
-
-  if (regionCount.core < 1) {
-    for (const muscle of REPLACE_PRIORITY_MUSCLES) {
-      const index = picked.findIndex((ex) => ex.primaryMuscles[0] === muscle);
-      if (index >= 0) return index;
-    }
-    const legIndex = picked.findIndex(
-      (ex) => getMuscleRegion(ex.primaryMuscles[0]) === "legs"
-    );
-    if (legIndex >= 0 && regionCount.legs >= 1) return legIndex;
-    return picked.length > 0 ? picked.length - 1 : -1;
-  }
-
-  return -1;
-}
-
-function findBestCoreExercise(
-  pool: Exercise[],
-  picked: Exercise[],
-  params: GeneratorParams,
-  lastForce: string | null
-): Exercise | null {
-  const candidates = pool.filter(
-    (ex) =>
-      !picked.some((p) => p.id === ex.id) &&
-      ex.primaryMuscles.includes("abdominals")
-  );
-  if (candidates.length === 0) return null;
-  return [...candidates].sort((a, b) =>
-    compareExercises(a, b, params, lastForce)
-  )[0];
-}
-
-export function ensureFullBodyBalance(
-  picked: Exercise[],
-  pool: Exercise[],
-  params: GeneratorParams
-): Exercise[] {
-  if (params.focus !== "full_body" || picked.length === 0) return picked;
-
-  const result = [...picked];
-  const lastForce = result.length > 0 ? result[result.length - 1].force : null;
-  let regionCount = countRegions(result);
-
-  if (regionCount.legs > 1 || regionCount.core < 1) {
-    const replaceIndex = findReplacementIndex(result, regionCount);
-    if (replaceIndex >= 0) {
-      if (regionCount.core < 1) {
-        const coreExercise = findBestCoreExercise(
-          pool,
-          result,
-          params,
-          lastForce
-        );
-        if (coreExercise) {
-          result[replaceIndex] = coreExercise;
-        }
-      } else if (regionCount.legs > 1) {
-        const coreExercise = findBestCoreExercise(
-          pool,
-          result,
-          params,
-          lastForce
-        );
-        if (
-          coreExercise &&
-          getMuscleRegion(result[replaceIndex].primaryMuscles[0]) === "legs"
-        ) {
-          result[replaceIndex] = coreExercise;
-        } else {
-          result.splice(replaceIndex, 1);
-        }
-      }
-    }
-  }
-
-  regionCount = countRegions(result);
-  if (regionCount.core < 1) {
-    const coreExercise = findBestCoreExercise(pool, result, params, lastForce);
-    const replaceIndex = findReplacementIndex(result, regionCount);
-    if (coreExercise && replaceIndex >= 0) {
-      result[replaceIndex] = coreExercise;
-    }
-  }
-
-  return result;
-}
+) => scoreExercise(b, params, lastForce) - scoreExercise(a, params, lastForce);
 
 function pickMainExercises(
   pool: Exercise[],
@@ -279,23 +133,13 @@ function pickMainExercises(
   let lastForce: string | null = null;
   let muscleIndex = 0;
 
-  const available = pool.filter((ex) => {
-    const isCardioBehavior =
-      ex.category === "cardio" || ex.category === "plyometrics";
-    return params.loadType === "cardio" ? isCardioBehavior : !isCardioBehavior;
-  });
-
+  // Из пула уже отфильтрованы только силовые упражнения
   const rotationLength = isFullBody
     ? FULL_BODY_ROTATION.length
     : targetMuscles.length;
-
   const MAX_LOOPS = rotationLength * 4;
 
-  while (
-    picked.length < count &&
-    available.length > 0 &&
-    muscleIndex < MAX_LOOPS
-  ) {
+  while (picked.length < count && pool.length > 0 && muscleIndex < MAX_LOOPS) {
     const targetMuscle = isFullBody
       ? FULL_BODY_ROTATION[muscleIndex % FULL_BODY_ROTATION.length]
       : targetMuscles[muscleIndex % targetMuscles.length];
@@ -304,15 +148,11 @@ function pickMainExercises(
       ? 1
       : muscleMaxCounts[targetMuscle] ?? 2;
 
-    const candidates = available.filter((ex) => {
+    const candidates = pool.filter((ex) => {
       if (picked.some((p) => p.id === ex.id)) return false;
-
-      const isTarget = ex.primaryMuscles.includes(targetMuscle);
-      if (!isTarget) return false;
-
+      if (!ex.primaryMuscles.includes(targetMuscle)) return false;
       if ((muscleCount.get(targetMuscle) ?? 0) >= currentMuscleLimit)
         return false;
-
       if (isFullBody && !passesFullBodyRegionCap(ex, regionCount)) return false;
       return true;
     });
@@ -336,7 +176,7 @@ function pickMainExercises(
   }
 
   if (picked.length < count) {
-    const remaining = available
+    const remaining = pool
       .filter((ex) => !picked.some((p) => p.id === ex.id))
       .sort((a, b) => compareExercises(a, b, params, lastForce));
 
@@ -365,12 +205,7 @@ function buildPlannedExercises(
 ): PlannedExercise[] {
   return exercises.map((ex, index) => ({
     exercise: ex,
-    prescription: buildPrescription(
-      params.loadType,
-      params.intensity,
-      level,
-      ex
-    ),
+    prescription: buildPrescription("strength", params.intensity, level, ex),
     order: index,
   }));
 }
@@ -399,7 +234,6 @@ export function generateWorkout(
   params: GeneratorParams
 ): GeneratedWorkout {
   const pool = filterExercises(allExercises, profile, params);
-
   const targetMuscles = getTargetMuscles(params);
   const { maxExercises, muscleMaxCounts } = calculateTargetLimits(
     params,
@@ -412,7 +246,6 @@ export function generateWorkout(
     params,
     muscleMaxCounts
   );
-
   const picked: Exercise[] = [];
 
   for (const next of fullPickedList) {
@@ -423,13 +256,8 @@ export function generateWorkout(
     );
     const totalIfAdded = sumPlannedSeconds(trialPlanned, params.intensity);
 
-    if (picked.length > 0 && totalIfAdded > BUDGET_MAX_SECONDS) {
-      break;
-    }
-
-    if (picked.length < maxExercises) {
-      picked.push(next);
-    }
+    if (picked.length > 0 && totalIfAdded > BUDGET_MAX_SECONDS) break;
+    if (picked.length < maxExercises) picked.push(next);
   }
 
   const rawPlanned = buildPlannedExercises(picked, params, profile.level);
@@ -448,46 +276,6 @@ export function generateWorkout(
   };
 }
 
-export function getAlternativeExercises(
-  currentEx: Exercise,
-  allExercises: Exercise[],
-  profile: UserProfile,
-  params: GeneratorParams,
-  limit: number = 4
-): Exercise[] {
-  const pool = filterExercises(allExercises, profile, params);
-
-  const primaryMuscle = currentEx.primaryMuscles[0];
-  const candidates = pool
-    .filter((ex) => ex.id !== currentEx.id && ex.primaryMuscles.includes(primaryMuscle))
-    .sort((a, b) => compareExercises(a, b, params, null));
-
-  const result: Exercise[] = [];
-  const seenEquipment = new Set<string>();
-
-  if (currentEx.equipment) {
-    seenEquipment.add(currentEx.equipment);
-  }
-
-  for (const ex of candidates) {
-    if (result.length >= limit) break;
-    if (ex.equipment && !seenEquipment.has(ex.equipment)) {
-      result.push(ex);
-      seenEquipment.add(ex.equipment);
-    }
-  }
-
-  if (result.length < limit) {
-    for (const ex of candidates) {
-      if (result.length >= limit) break;
-      if (!result.some((r) => r.id === ex.id)) {
-        result.push(ex);
-      }
-    }
-  }
-
-  return result;
-}
 
 const MINOR_MUSCLES: MuscleGroup[] = [
   "triceps",
@@ -509,7 +297,6 @@ function calculateTargetLimits(
 ): TargetLimits {
   if (["full_body", "upper", "lower"].includes(params.focus)) {
     const limits: Partial<Record<MuscleGroup, number>> = {};
-
     const defaultLimit = params.focus === "full_body" ? 1 : 2;
 
     targetMuscles.forEach((m) => {
@@ -549,4 +336,3 @@ function calculateTargetLimits(
   };
 }
 
-export { DEFAULT_GENERATOR_PARAMS } from "./constants";

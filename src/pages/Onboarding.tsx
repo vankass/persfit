@@ -14,22 +14,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { saveProfile } from "@/lib/db";
 import { useNavigate } from "react-router-dom";
 import type { ProfileGender, ProfileLevel } from "@/types/profile";
+import {
+  getInvalidProfileFields,
+  type ProfileField,
+} from "@/lib/profile/validation";
 
 const FIELD_STYLES =
   "w-full rounded-xl bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-blue-400";
 const LABEL_STYLES =
   "text-sm font-medium flex items-center gap-2 text-slate-600 select-none";
 
-type FieldName = "name" | "gender" | "age" | "weight" | "height" | "level";
-
-const VALIDATION_RULES: Record<FieldName, (v: string) => boolean> = {
-  name: (v) => v.trim().length < 2 || v.trim().length > 15,
-  gender: (v) => !v,
-  age: (v) => !v || Number(v) < 14 || Number(v) > 100,
-  weight: (v) => !v || Number(v) < 30 || Number(v) > 300,
-  height: (v) => !v || Number(v) < 100 || Number(v) > 250,
-  level: (v) => !v,
-};
+type FieldName = ProfileField;
 
 interface OnboardingProps {
   onComplete: () => Promise<void>;
@@ -57,9 +52,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   const getInvalidFields = (): FieldName[] => {
-    return (Object.keys(formData) as FieldName[]).filter((field) =>
-      VALIDATION_RULES[field](formData[field])
-    );
+    return getInvalidProfileFields(formData);
   };
 
   const triggerGlow = (fields: FieldName[]) => {
@@ -252,7 +245,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 <SelectItem value="intermediate">
                   Средний (занимался)
                 </SelectItem>
-                <SelectItem value="advanced">Продвинутый (атлет)</SelectItem>
+                <SelectItem value="expert">Продвинутый (атлет)</SelectItem>
               </SelectContent>
             </Select>
           </div>

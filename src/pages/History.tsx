@@ -1,15 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Loader2,
   History as HistoryIcon,
   ChevronRight,
   Trash2,
 } from "lucide-react";
-import { deleteWorkoutHistory, getWorkoutHistory } from "@/lib/db";
 import type { WorkoutHistoryEntry } from "@/types/workout";
-import {
-  getSessionLabel,
-} from "@/lib/workout/workoutGenerator";
+import { getSessionLabel } from "@/lib/workout/workoutGenerator";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +14,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { translate } from "@/utils/translations";
+import { translate } from "@/lib/translations";
+import { completionPercent } from "@/lib/workout/completion";
+import { useHistoryData } from "@/hooks/useHistoryData";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("ru-RU", {
@@ -34,47 +33,14 @@ function formatMinutes(seconds: number): string {
   return `${m} мин`;
 }
 
-function completionPercent(entry: WorkoutHistoryEntry): number {
-  let total = 0;
-  let done = 0;
-  entry.planned.exercises.forEach((item, i) => {
-    total += item.prescription.sets;
-    const sets = entry.completedExercises[i]?.sets ?? [];
-    done += sets.filter((s) => s.completed).length;
-  });
-  return total > 0 ? Math.round((done / total) * 100) : 0;
-}
-
 export default function History() {
-  const [entries, setEntries] = useState<WorkoutHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { entries, loading, deletingId, removeEntry } = useHistoryData();
   const [selected, setSelected] = useState<WorkoutHistoryEntry | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    getWorkoutHistory().then((data) => {
-      setEntries(data);
-      setLoading(false);
-    });
-  }, []);
 
   const handleDelete = async (id: string, fromDialog = false) => {
-    if (
-      !window.confirm(
-        "Удалить эту тренировку из истории? Действие нельзя отменить."
-      )
-    ) {
-      return;
-    }
-    setDeletingId(id);
-    try {
-      await deleteWorkoutHistory(id);
-      setEntries((prev) => prev.filter((e) => e.id !== id));
-      if (fromDialog || selected?.id === id) {
-        setSelected(null);
-      }
-    } finally {
-      setDeletingId(null);
+    const removed = await removeEntry(id);
+    if (removed && (fromDialog || selected?.id === id)) {
+      setSelected(null);
     }
   };
 
@@ -150,7 +116,7 @@ export default function History() {
         </div>
       )}
 
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-3xl sm:max-w-lg">
           {selected && (
             <>

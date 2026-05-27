@@ -7,7 +7,7 @@ import { SvgAreaChart } from "./charts/SvgAreaChart";
 
 function ChartEmpty({ message }: { message: string }) {
   return (
-    <div className="flex h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 md:h-[280px]">
+    <div className="flex h-55 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 md:h-70">
       <BarChart3 className="h-8 w-8 text-slate-300" />
       <p className="mt-2 text-sm font-medium text-slate-400">{message}</p>
     </div>

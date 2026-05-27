@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { Exercise } from "@/types/exercise";
-import type { UserProfile } from "@/types/profile";
 import type {
   CompletedSet,
   GeneratedWorkout,
@@ -9,11 +7,8 @@ import type {
   GeneratorPhase,
   WorkoutHistoryEntry,
 } from "@/types/workout";
-import { getProfile, saveWorkoutHistory } from "@/lib/db";
-import {
-  DEFAULT_GENERATOR_PARAMS,
-  generateWorkout,
-} from "@/lib/workout/workoutGenerator";
+import { generateWorkout } from "@/lib/workout/workoutGenerator";
+import { DEFAULT_GENERATOR_PARAMS } from "@/lib/workout/constants";
 import { GeneratorForm } from "@/components/generator/GeneratorForm";
 import { WorkoutPlanView } from "@/components/generator/WorkoutPlanView";
 import {
@@ -22,6 +17,8 @@ import {
 } from "@/components/generator/WorkoutSessionView";
 import { WorkoutSummaryView } from "@/components/generator/WorkoutSummaryView";
 import { Loader } from "@/components/Loader";
+import { useGeneratorData } from "@/hooks/useGeneratorData";
+import { saveWorkoutHistory } from "@/lib/db";
 
 function initCompletedSets(workout: GeneratedWorkout): CompletedSet[][] {
   return workout.exercises.map((item) =>
@@ -39,11 +36,8 @@ function calculateDuration(start: string, end: string): number {
 
 export default function Generator() {
   const navigate = useNavigate();
-
+  const { profile, exercises, loading } = useGeneratorData();
   const [phase, setPhase] = useState<GeneratorPhase>("wizard");
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
   const [params, setParams] = useState<GeneratorParams>(
     DEFAULT_GENERATOR_PARAMS
   );
@@ -52,28 +46,6 @@ export default function Generator() {
     useState<SessionProgress | null>(null);
   const [finishedAt, setFinishedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [p, res] = await Promise.all([
-          getProfile(),
-          fetch("/exercises/exercises.json"),
-        ]);
-
-        if (p) setProfile(p);
-        if (res.ok) {
-          const data = await res.json();
-          setExercises(data);
-        }
-      } catch (error) {
-        console.error("Ошибка при загрузке данных:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
 
   const handleGenerate = () => {
     if (!profile || exercises.length === 0) return;

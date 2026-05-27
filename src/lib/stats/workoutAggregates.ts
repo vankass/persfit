@@ -1,6 +1,7 @@
 import type { WorkoutHistoryEntry } from "@/types/workout";
 import type { BodyMeasurement } from "@/types/measurement";
 import { calcBmi } from "@/lib/anthropometry";
+import { completionPercent } from "@/lib/workout/completion";
 
 const WEEKS_LIMIT = 10;
 
@@ -35,26 +36,21 @@ function formatWeekLabel(weekStart: Date): string {
   const startStr = weekStart.toLocaleDateString("ru-RU", opts);
   const endStr = end.toLocaleDateString("ru-RU", opts);
   if (weekStart.getMonth() === end.getMonth()) {
-    return `${weekStart.getDate()}–${end.getDate()} ${end.toLocaleDateString("ru-RU", { month: "short" })}`;
+    return `${weekStart.getDate()}–${end.getDate()} ${end.toLocaleDateString(
+      "ru-RU",
+      { month: "short" }
+    )}`;
   }
   return `${startStr} – ${endStr}`;
-}
-
-export function completionPercent(entry: WorkoutHistoryEntry): number {
-  let total = 0;
-  let done = 0;
-  entry.planned.exercises.forEach((item, i) => {
-    total += item.prescription.sets;
-    const sets = entry.completedExercises[i]?.sets ?? [];
-    done += sets.filter((s) => s.completed).length;
-  });
-  return total > 0 ? Math.round((done / total) * 100) : 0;
 }
 
 export function buildWorkoutSummary(
   entries: WorkoutHistoryEntry[]
 ): WorkoutSummary {
-  const totalSeconds = entries.reduce((sum, e) => sum + e.totalDurationSeconds, 0);
+  const totalSeconds = entries.reduce(
+    (sum, e) => sum + e.totalDurationSeconds,
+    0
+  );
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const weekCount = entries.filter(
     (e) => new Date(e.finishedAt).getTime() >= weekAgo
@@ -75,18 +71,32 @@ export function buildWorkoutSummary(
   };
 }
 
-export function aggregateByWeek(
-  entries: WorkoutHistoryEntry[]
-): WeekBucket[] {
+export function aggregateByWeek(entries: WorkoutHistoryEntry[]): WeekBucket[] {
   const map = new Map<
     string,
     { weekStart: Date; count: number; minutes: number; completions: number[] }
   >();
 
   for (const entry of entries) {
-    const date = new Date(entry.finishedAt);
+    let date: Date;
+    if (
+      typeof entry.finishedAt === "string" &&
+      entry.finishedAt.includes("T")
+    ) {
+      date = new Date(entry.finishedAt);
+    } else {
+      const [year, month, day] = String(entry.finishedAt)
+        .split("-")
+        .map(Number);
+      date = new Date(year, month - 1, day);
+    }
+
     const weekStart = getWeekStart(date);
-    const weekKey = weekStart.toISOString().slice(0, 10);
+
+    const year = weekStart.getFullYear();
+    const month = String(weekStart.getMonth() + 1).padStart(2, "0");
+    const day = String(weekStart.getDate()).padStart(2, "0");
+    const weekKey = `${year}-${month}-${day}`;
 
     const bucket = map.get(weekKey) ?? {
       weekStart,
@@ -104,8 +114,8 @@ export function aggregateByWeek(
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-WEEKS_LIMIT);
 
-  return sorted.map(([, bucket]) => ({
-    weekKey: bucket.weekStart.toISOString().slice(0, 10),
+  return sorted.map(([weekKey, bucket]) => ({
+    weekKey,
     label: formatWeekLabel(bucket.weekStart),
     count: bucket.count,
     minutes: bucket.minutes,

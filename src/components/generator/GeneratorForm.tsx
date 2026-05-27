@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import type { UserProfile } from "@/types/profile";
 import type { GeneratorParams, TrainingLocation } from "@/types/workout";
-import { DEFAULT_GENERATOR_PARAMS } from "@/lib/workout/workoutGenerator";
-import { translate } from "@/utils/translations";
+import { DEFAULT_GENERATOR_PARAMS } from "@/lib/workout/constants";
+import { translate } from "@/lib/translations";
 import {
   ALL_GENERATOR_EQUIPMENT,
   buildHomeEquipment,

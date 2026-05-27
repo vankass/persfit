@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { User, Ruler, Target, Edit2, Check, X, Calendar } from "lucide-react";
-import { getProfile, saveProfile } from "@/lib/db";
 import type { UserProfile } from "@/types/profile";
 import { Loader } from "@/components/Loader";
-import { translate } from "@/utils/translations";
+import { translate } from "@/lib/translations";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -13,6 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProfile } from "@/hooks/useProfile";
+import {
+  getInvalidUserProfileFields,
+  type ProfileField,
+} from "@/lib/profile/validation";
+import { saveProfile } from "@/lib/db";
 
 interface ProfileActionsProps {
   isEditing: boolean;
@@ -33,7 +37,7 @@ function ProfileActions({
     return (
       <button
         onClick={() => setIsEditing(true)}
-        className={`flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm ${
+        className={`flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer ${
           isMobile ? "w-full py-2.5" : ""
         }`}
       >
@@ -47,7 +51,7 @@ function ProfileActions({
     <div className={`flex gap-2 ${isMobile ? "w-full" : ""}`}>
       <button
         onClick={handleCancel}
-        className={`flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors ${
+        className={`flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
           isMobile ? "flex-1 py-2.5" : ""
         }`}
       >
@@ -56,7 +60,7 @@ function ProfileActions({
       </button>
       <button
         onClick={handleSave}
-        className={`flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm ${
+        className={`flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer ${
           isMobile ? "flex-1 py-2.5" : ""
         }`}
       >
@@ -67,49 +71,23 @@ function ProfileActions({
   );
 }
 
-const VALIDATION_RULES: Partial<
-  Record<keyof UserProfile, (v: string | number) => boolean>
-> = {
-  name: (v) =>
-    !v || v.toString().trim().length < 2 || v.toString().trim().length > 15,
-  gender: (v) => !v,
-  age: (v) => !v || Number(v) < 14 || Number(v) > 100,
-  weight: (v) => !v || Number(v) < 30 || Number(v) > 300,
-  height: (v) => !v || Number(v) < 100 || Number(v) > 250,
-  level: (v) => !v,
-};
-
 export default function Profile() {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const { user: currentUser, refreshProfile } = useProfile();
+
   const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [glowFields, setGlowFields] = useState<(keyof UserProfile)[]>([]);
-
-  const { refreshProfile } = useProfile();
+  const [isSaving, setIsSaving] = useState(false);
+  const [glowFields, setGlowFields] = useState<ProfileField[]>([]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const profile = await getProfile();
-        if (profile) {
-          setUser(profile);
-          setEditedProfile(profile);
-        }
-      } catch (error) {
-        console.error("Ошибка при загрузке профиля:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+    if (currentUser) {
+      setEditedProfile(currentUser);
+    }
+  }, [currentUser]);
 
-  if (loading || !user || !editedProfile) {
+  if (!currentUser || !editedProfile) {
     return <Loader />;
   }
-
-  const currentUser = user;
 
   const handleCancel = () => {
     setEditedProfile({ ...currentUser });
@@ -117,17 +95,11 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const getInvalidFields = (): (keyof UserProfile)[] => {
-    if (!editedProfile) return [];
-    return (Object.keys(VALIDATION_RULES) as (keyof UserProfile)[]).filter(
-      (field) => {
-        const rule = VALIDATION_RULES[field];
-        return rule ? rule(editedProfile[field]) : false;
-      }
-    );
+  const getInvalidFields = (): ProfileField[] => {
+    return getInvalidUserProfileFields(editedProfile);
   };
 
-  const triggerGlow = (fields: (keyof UserProfile)[]) => {
+  const triggerGlow = (fields: ProfileField[]) => {
     setGlowFields([]);
     window.requestAnimationFrame(() => {
       setGlowFields(fields);
@@ -135,7 +107,7 @@ export default function Profile() {
     });
   };
 
-  const getFieldClass = (fieldName: keyof UserProfile) => {
+  const getFieldClass = (fieldName: ProfileField) => {
     const isError = glowFields.includes(fieldName);
     return `w-full px-3 py-2 border rounded-lg text-sm bg-slate-50 focus:outline-none transition-[box-shadow,background-color] duration-200 ${
       isError
@@ -145,8 +117,6 @@ export default function Profile() {
   };
 
   const handleSave = async () => {
-    if (!editedProfile) return;
-
     const invalidFields = getInvalidFields();
     if (invalidFields.length > 0) {
       triggerGlow(invalidFields);
@@ -154,16 +124,15 @@ export default function Profile() {
     }
 
     try {
-      setLoading(true);
+      setIsSaving(true);
       await saveProfile(editedProfile);
-      setUser({ ...editedProfile });
       await refreshProfile();
       setIsEditing(false);
     } catch (error) {
-      console.error("Ошибка сохранения профиля:", error);
+      console.error(error);
       alert("Не удалось сохранить профиль, попробуйте позже");
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -194,7 +163,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:py-10">
+    <div className="max-w-4xl mx-auto px-4 md:py-10 relative">
+      {isSaving && <Loader />}
+
       <div className="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-5 mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
@@ -211,6 +182,7 @@ export default function Profile() {
           />
         </div>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col items-center text-center h-fit shadow-sm">
           <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 border border-blue-100">
@@ -331,7 +303,7 @@ export default function Profile() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1 items-center gap-1">
+                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">
                   Вес (кг)
                 </label>
                 {isEditing ? (
@@ -352,7 +324,7 @@ export default function Profile() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1 items-center gap-1">
+                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">
                   Рост (см)
                 </label>
                 {isEditing ? (
@@ -373,7 +345,7 @@ export default function Profile() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1 items-center gap-1">
+                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">
                   Уровень подготовки
                 </label>
                 {isEditing ? (
@@ -387,7 +359,7 @@ export default function Profile() {
                     <SelectContent className="rounded-xl border-none shadow-lg">
                       <SelectItem value="beginner">Новичок</SelectItem>
                       <SelectItem value="intermediate">Средний</SelectItem>
-                      <SelectItem value="advanced">Продвинутый</SelectItem>
+                      <SelectItem value="expert">Продвинутый</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (

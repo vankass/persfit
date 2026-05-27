@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { translate } from "@/utils/translations";
+import { translate } from "@/lib/translations";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   DropdownMenu,
