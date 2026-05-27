@@ -103,7 +103,7 @@ export function ActivityCalendar({ history }: ActivityCalendarProps) {
               >
                 ←
               </button>
-              <span className="text-xs font-semibold text-slate-700 px-1.5 min-w-[85px] sm:min-w-[95px] text-center select-none">
+              <span className="text-xs font-semibold text-slate-700 px-1.5 min-w-21.25 sm:min-w-23.75 text-center select-none">
                 {monthNames[currentMonth]} {currentYear}
               </span>
               <button
@@ -221,7 +221,7 @@ export function ActivityCalendar({ history }: ActivityCalendarProps) {
           </div>
 
           {selectedWorkouts && selectedWorkouts.length > 0 ? (
-            <div className="space-y-3 overflow-visible h-auto md:overflow-y-auto md:h-0 md:flex-grow pr-0 md:pr-1 scrollbar-thin">
+            <div className="space-y-3 overflow-visible h-auto md:overflow-y-auto md:h-0 md:grow pr-0 md:pr-1 scrollbar-thin">
               {selectedWorkouts.map((workout, index) => (
                 <div
                   key={workout.id || index}
@@ -294,7 +294,7 @@ export function ActivityCalendar({ history }: ActivityCalendarProps) {
               <div className="h-9 w-9 rounded-full bg-slate-50 flex items-center justify-center mb-1.5">
                 <span className="text-slate-400 text-base">💤</span>
               </div>
-              <p className="text-xs sm:text-sm font-medium text-slate-400 max-w-[200px]">
+              <p className="text-xs sm:text-sm font-medium text-slate-400 max-w-50">
                 В этот день тренировок не было
               </p>
             </div>

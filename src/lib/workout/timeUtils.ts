@@ -1,4 +1,4 @@
-import type { PlannedExercise, WorkoutFocus, WorkoutIntensity, WorkoutSetPrescription } from "@/types/workout";
+import type { GeneratedWorkout, PlannedExercise, WorkoutFocus, WorkoutIntensity, WorkoutSetPrescription } from "@/types/workout";
 import type { ProfileLevel } from "@/types/profile";
 import { 
   BUDGET_MAX_SECONDS, 
@@ -44,4 +44,16 @@ export function computeWorkoutDurationMinutes(exercises: PlannedExercise[], inte
 
 export function sumPlannedSeconds(planned: PlannedExercise[], intensity: WorkoutIntensity): number {
   return planned.reduce((sum, item) => sum + estimateExerciseSeconds(item.prescription, item.exercise.category, intensity), 0);
+}
+
+export function recalculateWorkoutDuration(
+  workout: GeneratedWorkout
+): GeneratedWorkout {
+  return {
+    ...workout,
+    estimatedDurationMinutes: computeWorkoutDurationMinutes(
+      workout.exercises,
+      workout.params.intensity
+    ),
+  };
 }

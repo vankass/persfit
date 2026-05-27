@@ -8,37 +8,171 @@ import type {
   GeneratedWorkout,
   GeneratorParams,
   PlannedExercise,
-  WorkoutIntensity,
 } from "@/types/workout";
 
 import {
-  INTENSITY_LABELS,
+  BUDGET_MAX_SECONDS,
   FULL_BODY_ROTATION,
   getMuscleRegion,
   type MuscleRegion,
-  BUDGET_MAX_SECONDS,
 } from "./constants";
 import { getPopularityBonus } from "./exercisePopularity";
-import { computeWorkoutDurationMinutes, sumPlannedSeconds } from "./timeUtils";
 import { getTargetMuscles, buildPrescription } from "./prescription";
+import { computeWorkoutDurationMinutes, sumPlannedSeconds } from "./timeUtils";
+import { calculateTargetLimits } from "./limits";
 
-export function getIntensityLabel(intensity: WorkoutIntensity): string {
-  return INTENSITY_LABELS[intensity] ?? intensity;
-}
+type RegionCounts = Record<MuscleRegion, number>;
 
-export const getSessionLabel = (params: GeneratorParams): string =>
-  `Силовая · ${getIntensityLabel(params.intensity)}`;
-
-export function recalculateWorkoutDuration(
-  workout: GeneratedWorkout
+export function generateWorkout(
+  allExercises: Exercise[],
+  profile: UserProfile,
+  params: GeneratorParams
 ): GeneratedWorkout {
+  const pool = filterExercises(allExercises, profile, params);
+  const targetMuscles = getTargetMuscles(params);
+  const { maxExercises, muscleMaxCounts } = calculateTargetLimits(
+    params,
+    targetMuscles
+  );
+
+  const fullPickedList = pickMainExercises(
+    pool,
+    maxExercises,
+    params,
+    muscleMaxCounts
+  );
+
+  const picked: Exercise[] = [];
+  let finalPlanned: PlannedExercise[] = [];
+
+  for (const next of fullPickedList) {
+    const trialPlanned = buildPlannedExercises(
+      [...picked, next],
+      params,
+      profile.level
+    );
+    const totalIfAdded = sumPlannedSeconds(trialPlanned, params.intensity);
+
+    if (picked.length > 0 && totalIfAdded > BUDGET_MAX_SECONDS) break;
+
+    if (picked.length < maxExercises) {
+      picked.push(next);
+      finalPlanned = trialPlanned;
+    }
+  }
+
+  const sortedPlanned = sortPlannedExercises(finalPlanned);
+
   return {
-    ...workout,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    params,
+    profileSnapshot: profile,
+    exercises: sortedPlanned,
     estimatedDurationMinutes: computeWorkoutDurationMinutes(
-      workout.exercises,
-      workout.params.intensity
+      sortedPlanned,
+      params.intensity
     ),
   };
+}
+
+function pickMainExercises(
+  pool: Exercise[],
+  count: number,
+  params: GeneratorParams,
+  muscleMaxCounts: Partial<Record<MuscleGroup, number>>
+): Exercise[] {
+  const targetMuscles = getTargetMuscles(params);
+  const isFullBody = params.focus === "full_body";
+  const picked: Exercise[] = [];
+  const muscleCount = new Map<MuscleGroup, number>();
+  const regionCount = { legs: 0, core: 0, upper: 0 };
+  let lastForce: string | null = null;
+
+  let loopCounter = 0;
+  const rotation = isFullBody ? FULL_BODY_ROTATION : targetMuscles;
+
+  while (picked.length < count && pool.length > 0 && loopCounter < 100) {
+    const targetMuscle = rotation[loopCounter % rotation.length];
+    const currentMuscleLimit = isFullBody
+      ? 1
+      : muscleMaxCounts[targetMuscle] ?? 2;
+
+    const candidates = pool.filter((ex) => {
+      if (picked.some((p) => p.id === ex.id)) return false;
+      if (!ex.primaryMuscles.includes(targetMuscle)) return false;
+      if ((muscleCount.get(targetMuscle) ?? 0) >= currentMuscleLimit)
+        return false;
+      if (isFullBody && !passesFullBodyRegionCap(ex, regionCount)) return false;
+      return true;
+    });
+
+    if (candidates.length === 0) {
+      loopCounter += 1;
+      if (loopCounter > rotation.length * 2 && picked.length === 0) break;
+      continue;
+    }
+
+    const chosen = [...candidates].sort((a, b) =>
+      compareExercises(a, b, params, lastForce)
+    )[0];
+
+    picked.push(chosen);
+    lastForce = chosen.force;
+    const primary = chosen.primaryMuscles[0];
+    muscleCount.set(primary, (muscleCount.get(primary) ?? 0) + 1);
+    regionCount[getMuscleRegion(primary)] += 1;
+    loopCounter += 1;
+  }
+
+  if (picked.length < count) {
+    const remaining = pool
+      .filter((ex) => !picked.some((p) => p.id === ex.id))
+      .sort((a, b) => compareExercises(a, b, params, lastForce));
+
+    for (const ex of remaining) {
+      if (picked.length >= count) break;
+      const primary = ex.primaryMuscles[0];
+      const currentMuscleLimit = isFullBody ? 1 : muscleMaxCounts[primary] ?? 1;
+
+      if ((muscleCount.get(primary) ?? 0) >= currentMuscleLimit) continue;
+
+      picked.push(ex);
+      muscleCount.set(primary, (muscleCount.get(primary) ?? 0) + 1);
+    }
+  }
+
+  return picked;
+}
+
+function buildPlannedExercises(
+  exercises: Exercise[],
+  params: GeneratorParams,
+  level: ProfileLevel
+): PlannedExercise[] {
+  return exercises.map((ex, index) => ({
+    exercise: ex,
+    prescription: buildPrescription("strength", params.intensity, level, ex),
+    order: index,
+  }));
+}
+
+function sortPlannedExercises(planned: PlannedExercise[]): PlannedExercise[] {
+  return [...planned]
+    .sort((a, b) => {
+      if (
+        a.exercise.mechanic === "compound" &&
+        b.exercise.mechanic === "isolation"
+      )
+        return -1;
+      if (
+        a.exercise.mechanic === "isolation" &&
+        b.exercise.mechanic === "compound"
+      )
+        return 1;
+      return 0;
+    })
+    .map((item, index) => ({ ...item, order: index }));
 }
 
 function filterExercises(
@@ -53,8 +187,6 @@ function filterExercises(
     if (!allowedLevels.includes(ex.level)) return false;
     if (ex.primaryMuscles.includes("neck") || ex.category === "stretching")
       return false;
-
-    // Исключаем кардио-активности, оставляем только силовые категории
     if (!["strength", "powerlifting"].includes(ex.category)) return false;
 
     if (
@@ -98,10 +230,6 @@ function scoreExercise(
   return score;
 }
 
-type RegionCounts = Record<MuscleRegion, number>;
-
-const emptyRegionCounts = (): RegionCounts => ({ legs: 0, core: 0, upper: 0 });
-
 function passesFullBodyRegionCap(
   ex: Exercise,
   regionCount: RegionCounts
@@ -118,221 +246,3 @@ const compareExercises = (
   params: GeneratorParams,
   lastForce: string | null
 ) => scoreExercise(b, params, lastForce) - scoreExercise(a, params, lastForce);
-
-function pickMainExercises(
-  pool: Exercise[],
-  count: number,
-  params: GeneratorParams,
-  muscleMaxCounts: Partial<Record<MuscleGroup, number>>
-): Exercise[] {
-  const targetMuscles = getTargetMuscles(params);
-  const isFullBody = params.focus === "full_body";
-  const picked: Exercise[] = [];
-  const muscleCount = new Map<MuscleGroup, number>();
-  const regionCount = emptyRegionCounts();
-  let lastForce: string | null = null;
-  let muscleIndex = 0;
-
-  // Из пула уже отфильтрованы только силовые упражнения
-  const rotationLength = isFullBody
-    ? FULL_BODY_ROTATION.length
-    : targetMuscles.length;
-  const MAX_LOOPS = rotationLength * 4;
-
-  while (picked.length < count && pool.length > 0 && muscleIndex < MAX_LOOPS) {
-    const targetMuscle = isFullBody
-      ? FULL_BODY_ROTATION[muscleIndex % FULL_BODY_ROTATION.length]
-      : targetMuscles[muscleIndex % targetMuscles.length];
-
-    const currentMuscleLimit: number = isFullBody
-      ? 1
-      : muscleMaxCounts[targetMuscle] ?? 2;
-
-    const candidates = pool.filter((ex) => {
-      if (picked.some((p) => p.id === ex.id)) return false;
-      if (!ex.primaryMuscles.includes(targetMuscle)) return false;
-      if ((muscleCount.get(targetMuscle) ?? 0) >= currentMuscleLimit)
-        return false;
-      if (isFullBody && !passesFullBodyRegionCap(ex, regionCount)) return false;
-      return true;
-    });
-
-    if (candidates.length === 0) {
-      muscleIndex += 1;
-      continue;
-    }
-
-    const sorted = [...candidates].sort((a, b) =>
-      compareExercises(a, b, params, lastForce)
-    );
-    const chosen = sorted[0];
-
-    picked.push(chosen);
-    lastForce = chosen.force;
-    const primary = chosen.primaryMuscles[0];
-    muscleCount.set(primary, (muscleCount.get(primary) ?? 0) + 1);
-    regionCount[getMuscleRegion(primary)] += 1;
-    muscleIndex += 1;
-  }
-
-  if (picked.length < count) {
-    const remaining = pool
-      .filter((ex) => !picked.some((p) => p.id === ex.id))
-      .sort((a, b) => compareExercises(a, b, params, lastForce));
-
-    for (const ex of remaining) {
-      if (picked.length >= count) break;
-      const primary = ex.primaryMuscles[0];
-
-      const currentMuscleLimit: number = isFullBody
-        ? 1
-        : muscleMaxCounts[primary] ?? 1;
-      if ((muscleCount.get(primary) ?? 0) >= currentMuscleLimit) continue;
-
-      picked.push(ex);
-      muscleCount.set(primary, (muscleCount.get(primary) ?? 0) + 1);
-      regionCount[getMuscleRegion(primary)] += 1;
-    }
-  }
-
-  return picked;
-}
-
-function buildPlannedExercises(
-  exercises: Exercise[],
-  params: GeneratorParams,
-  level: ProfileLevel
-): PlannedExercise[] {
-  return exercises.map((ex, index) => ({
-    exercise: ex,
-    prescription: buildPrescription("strength", params.intensity, level, ex),
-    order: index,
-  }));
-}
-
-function sortPlannedExercises(planned: PlannedExercise[]): PlannedExercise[] {
-  return [...planned]
-    .sort((a, b) => {
-      if (
-        a.exercise.mechanic === "compound" &&
-        b.exercise.mechanic === "isolation"
-      )
-        return -1;
-      if (
-        a.exercise.mechanic === "isolation" &&
-        b.exercise.mechanic === "compound"
-      )
-        return 1;
-      return 0;
-    })
-    .map((item, index) => ({ ...item, order: index }));
-}
-
-export function generateWorkout(
-  allExercises: Exercise[],
-  profile: UserProfile,
-  params: GeneratorParams
-): GeneratedWorkout {
-  const pool = filterExercises(allExercises, profile, params);
-  const targetMuscles = getTargetMuscles(params);
-  const { maxExercises, muscleMaxCounts } = calculateTargetLimits(
-    params,
-    targetMuscles
-  );
-
-  const fullPickedList = pickMainExercises(
-    pool,
-    maxExercises,
-    params,
-    muscleMaxCounts
-  );
-  const picked: Exercise[] = [];
-
-  for (const next of fullPickedList) {
-    const trialPlanned = buildPlannedExercises(
-      [...picked, next],
-      params,
-      profile.level
-    );
-    const totalIfAdded = sumPlannedSeconds(trialPlanned, params.intensity);
-
-    if (picked.length > 0 && totalIfAdded > BUDGET_MAX_SECONDS) break;
-    if (picked.length < maxExercises) picked.push(next);
-  }
-
-  const rawPlanned = buildPlannedExercises(picked, params, profile.level);
-  const sortedPlanned = sortPlannedExercises(rawPlanned);
-
-  return {
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    params,
-    profileSnapshot: profile,
-    exercises: sortedPlanned,
-    estimatedDurationMinutes: computeWorkoutDurationMinutes(
-      sortedPlanned,
-      params.intensity
-    ),
-  };
-}
-
-
-const MINOR_MUSCLES: MuscleGroup[] = [
-  "triceps",
-  "biceps",
-  "forearms",
-  "calves",
-  "abdominals",
-  "shoulders",
-];
-
-interface TargetLimits {
-  maxExercises: number;
-  muscleMaxCounts: Partial<Record<MuscleGroup, number>>;
-}
-
-function calculateTargetLimits(
-  params: GeneratorParams,
-  targetMuscles: MuscleGroup[]
-): TargetLimits {
-  if (["full_body", "upper", "lower"].includes(params.focus)) {
-    const limits: Partial<Record<MuscleGroup, number>> = {};
-    const defaultLimit = params.focus === "full_body" ? 1 : 2;
-
-    targetMuscles.forEach((m) => {
-      limits[m] = defaultLimit;
-    });
-    return { maxExercises: 5, muscleMaxCounts: limits };
-  }
-
-  const muscleMaxCounts: Partial<Record<MuscleGroup, number>> = {};
-  const majorSelected = targetMuscles.filter((m) => !MINOR_MUSCLES.includes(m));
-  const minorSelected = targetMuscles.filter((m) => MINOR_MUSCLES.includes(m));
-
-  if (targetMuscles.length === 1) {
-    const singleMuscle = targetMuscles[0];
-    const count = MINOR_MUSCLES.includes(singleMuscle) ? 2 : 3;
-    muscleMaxCounts[singleMuscle] = count;
-    return { maxExercises: count, muscleMaxCounts };
-  }
-
-  const minorAllocatedCount =
-    majorSelected.length > 0 && minorSelected.length > 1 ? 1 : 2;
-  let totalCalculated = 0;
-
-  majorSelected.forEach((m) => {
-    muscleMaxCounts[m] = 3;
-    totalCalculated += 3;
-  });
-
-  minorSelected.forEach((m) => {
-    muscleMaxCounts[m] = minorAllocatedCount;
-    totalCalculated += minorAllocatedCount;
-  });
-
-  return {
-    maxExercises: Math.min(totalCalculated, 6),
-    muscleMaxCounts,
-  };
-}
-

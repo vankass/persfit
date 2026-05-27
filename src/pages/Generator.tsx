@@ -20,20 +20,6 @@ import { Loader } from "@/components/Loader";
 import { useGeneratorData } from "@/hooks/useGeneratorData";
 import { saveWorkoutHistory } from "@/lib/db";
 
-function initCompletedSets(workout: GeneratedWorkout): CompletedSet[][] {
-  return workout.exercises.map((item) =>
-    Array.from({ length: item.prescription.sets }, (_, i) => ({
-      setIndex: i,
-      completed: false,
-    }))
-  );
-}
-
-function calculateDuration(start: string, end: string): number {
-  const diff = new Date(end).getTime() - new Date(start).getTime();
-  return Math.max(0, Math.floor(diff / 1000));
-}
-
 export default function Generator() {
   const navigate = useNavigate();
   const { profile, exercises, loading } = useGeneratorData();
@@ -47,6 +33,20 @@ export default function Generator() {
   const [finishedAt, setFinishedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (!profile) {
+    return (
+      <div className="rounded-3xl border border-slate-100 bg-white p-8 text-center">
+        <p className="text-slate-500">
+          Пожалуйста, заполните профиль, чтобы сгенерировать тренировку.
+        </p>
+      </div>
+    );
+  }
+  
   const handleGenerate = () => {
     if (!profile || exercises.length === 0) return;
     setWorkout(generateWorkout(exercises, profile, params));
@@ -97,20 +97,6 @@ export default function Generator() {
     }
   };
 
-  if (loading) {
-    return <Loader />;
-  }
-
-  if (!profile) {
-    return (
-      <div className="rounded-3xl border border-slate-100 bg-white p-8 text-center">
-        <p className="text-slate-500">
-          Сначала заполните профиль в онбординге.
-        </p>
-      </div>
-    );
-  }
-
   const renderPhase = () => {
     switch (phase) {
       case "wizard":
@@ -157,4 +143,18 @@ export default function Generator() {
   };
 
   return <div className="mx-auto max-w-3xl space-y-3">{renderPhase()}</div>;
+}
+
+function initCompletedSets(workout: GeneratedWorkout): CompletedSet[][] {
+  return workout.exercises.map((item) =>
+    Array.from({ length: item.prescription.sets }, (_, i) => ({
+      setIndex: i,
+      completed: false,
+    }))
+  );
+}
+
+function calculateDuration(start: string, end: string): number {
+  const diff = new Date(end).getTime() - new Date(start).getTime();
+  return Math.max(0, Math.floor(diff / 1000));
 }

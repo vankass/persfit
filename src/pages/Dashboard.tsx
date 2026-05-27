@@ -17,42 +17,13 @@ import { useNavigate } from "react-router-dom";
 import { Loader } from "@/components/Loader";
 import { useProfile } from "@/hooks/useProfile";
 import { useDashboardSummary } from "@/hooks/useDashboardSummary";
-import { getSessionLabel } from "@/lib/workout/workoutGenerator";
-
-function StatBox({
-  icon,
-  value,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      className="bg-white p-4 md:p-6 rounded-[24px] md:rounded-[28px] border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow cursor-pointer"
-    >
-      <div className="p-2 bg-slate-50 rounded-xl">{icon}</div>
-      <div className="text-center">
-        <span className="text-2xl md:text-3xl font-black leading-none">
-          {value}
-        </span>
-        <p className="text-[10px] md:text-xs uppercase font-bold text-slate-400 tracking-tighter mt-1">
-          {label}
-        </p>
-      </div>
-    </div>
-  );
-}
+import { getSessionLabel } from "@/lib/workout/labels";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useProfile();
   const { history, weekCount, lastWorkout, totalMinutes, loading } =
     useDashboardSummary();
-  const navigate = useNavigate();
 
   if (loading) {
     return <Loader />;
@@ -177,6 +148,35 @@ export default function Dashboard() {
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+function StatBox({
+  icon,
+  value,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white p-4 md:p-6 rounded-[24px] md:rounded-[28px] border border-slate-100 shadow-sm flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow cursor-pointer"
+    >
+      <div className="p-2 bg-slate-50 rounded-xl">{icon}</div>
+      <div className="text-center">
+        <span className="text-2xl md:text-3xl font-black leading-none">
+          {value}
+        </span>
+        <p className="text-[10px] md:text-xs uppercase font-bold text-slate-400 tracking-tighter mt-1">
+          {label}
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,7 +9,15 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Scale, Ruler, Baby, Users, Dumbbell } from "lucide-react";
+import {
+  User,
+  Scale,
+  Ruler,
+  Baby,
+  Users,
+  Dumbbell,
+  type LucideIcon,
+} from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { saveProfile } from "@/lib/db";
 import { useNavigate } from "react-router-dom";
@@ -18,17 +26,6 @@ import {
   getInvalidProfileFields,
   type ProfileField,
 } from "@/lib/profile/validation";
-
-const FIELD_STYLES =
-  "w-full rounded-xl bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-blue-400";
-const LABEL_STYLES =
-  "text-sm font-medium flex items-center gap-2 text-slate-600 select-none";
-
-type FieldName = ProfileField;
-
-interface OnboardingProps {
-  onComplete: () => Promise<void>;
-}
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
   const navigate = useNavigate();
@@ -42,32 +39,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     level: "",
   });
 
-  const [glowFields, setGlowFields] = useState<FieldName[]>([]);
+  const [glowFields, setGlowFields] = useState<ProfileField[]>([]);
 
-  const getFieldClass = (fieldName: FieldName) => {
+  const getFieldClass = (fieldName: ProfileField) => {
     const isError = glowFields.includes(fieldName);
-    return `${FIELD_STYLES} transition-[box-shadow,background-color] duration-200 ring-0 bg-slate-50 ${
+    return `w-full rounded-xl bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-blue-400 transition-[box-shadow,background-color] duration-200 ring-0 bg-slate-50 ${
       isError ? "pf-error-glow" : ""
     }`;
   };
 
-  const getInvalidFields = (): FieldName[] => {
-    return getInvalidProfileFields(formData);
-  };
-
-  const triggerGlow = (fields: FieldName[]) => {
-    setGlowFields([]);
-    window.requestAnimationFrame(() => {
-      setGlowFields(fields);
-      window.setTimeout(() => setGlowFields([]), 650);
-    });
-  };
-
   const handleFinish = async () => {
-    const invalidFields = getInvalidFields();
+    const invalidFields = getInvalidProfileFields(formData);
 
     if (invalidFields.length > 0) {
-      triggerGlow(invalidFields);
+      setGlowFields(invalidFields);
+      window.setTimeout(() => setGlowFields([]), 650);
       return;
     }
 
@@ -100,9 +86,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         <CardContent className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-6 sm:px-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className={LABEL_STYLES}>
-                <User className="w-4 h-4 text-blue-500" /> Имя
-              </label>
+              <FormLabel icon={User} iconClassName="text-blue-500">
+                Имя
+              </FormLabel>
               <Input
                 placeholder="Как тебя зовут?"
                 value={formData.name}
@@ -116,9 +102,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div className="space-y-3">
-              <label className={LABEL_STYLES}>
-                <Users className="w-4 h-4 text-pink-500" /> Пол
-              </label>
+              <FormLabel icon={Users} iconClassName="text-pink-500">
+                Пол
+              </FormLabel>
               <RadioGroup
                 value={formData.gender}
                 onValueChange={(value) => {
@@ -177,9 +163,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <label className={LABEL_STYLES}>
-                <Scale className="w-4 h-4 text-green-500" /> Вес (кг)
-              </label>
+              <FormLabel icon={Scale} iconClassName="text-green-500">
+                Вес (кг)
+              </FormLabel>
               <Input
                 type="number"
                 placeholder="30-300"
@@ -195,9 +181,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div className="space-y-2">
-              <label className={LABEL_STYLES}>
-                <Ruler className="w-4 h-4 text-purple-500" /> Рост (см)
-              </label>
+              <FormLabel icon={Ruler} iconClassName="text-purple-500">
+                Рост (см)
+              </FormLabel>
               <Input
                 type="number"
                 placeholder="100-250"
@@ -211,9 +197,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <div className="space-y-2">
-              <label className={LABEL_STYLES}>
-                <Baby className="w-4 h-4 text-orange-500" /> Возраст
-              </label>
+              <FormLabel icon={Baby} iconClassName="text-orange-500">
+                Возраст
+              </FormLabel>
               <Input
                 type="number"
                 placeholder="14-100"
@@ -228,9 +214,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </div>
 
           <div className="space-y-2">
-            <label className={LABEL_STYLES}>
-              <Dumbbell className="w-4 h-4 text-slate-700" /> Уровень подготовки
-            </label>
+            <FormLabel icon={Dumbbell} iconClassName="text-slate-700">
+              Уровень подготовки
+            </FormLabel>
             <Select
               value={formData.level}
               onValueChange={(value) => {
@@ -259,5 +245,28 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+interface OnboardingProps {
+  onComplete: () => Promise<void>;
+}
+
+interface FormLabelProps {
+  icon: LucideIcon;
+  iconClassName?: string;
+  children: ReactNode;
+}
+
+function FormLabel({
+  icon: Icon,
+  iconClassName = "",
+  children,
+}: FormLabelProps) {
+  return (
+    <label className="text-sm font-medium flex items-center gap-2 text-slate-600 select-none">
+      <Icon className={`w-4 h-4 ${iconClassName}`} />
+      {children}
+    </label>
   );
 }

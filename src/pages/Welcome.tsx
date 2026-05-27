@@ -61,7 +61,7 @@ export default function Welcome() {
         <FeatureCard
           icon={<TrendingUp className="w-6 h-6 text-green-500" />}
           title="Статистика"
-          desc="Следи за графиками своего прогресса."
+          desc="Отслеживай свой прогресс."
         />
       </div>
     </div>

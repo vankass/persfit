@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, Dumbbell, Save } from "lucide-react";
 import type { GeneratedWorkout } from "@/types/workout";
 import type { SessionProgress } from "./WorkoutSessionView";
-import { getSessionLabel } from "@/lib/workout/workoutGenerator";
+import { getSessionLabel } from "@/lib/workout/labels";
 
 interface WorkoutSummaryViewProps {
   workout: GeneratedWorkout;

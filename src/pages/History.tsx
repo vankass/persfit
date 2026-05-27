@@ -6,7 +6,6 @@ import {
   Trash2,
 } from "lucide-react";
 import type { WorkoutHistoryEntry } from "@/types/workout";
-import { getSessionLabel } from "@/lib/workout/workoutGenerator";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { translate } from "@/lib/translations";
 import { completionPercent } from "@/lib/workout/completion";
 import { useHistoryData } from "@/hooks/useHistoryData";
+import { getSessionLabel } from "@/lib/workout/labels";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("ru-RU", {
@@ -116,7 +116,10 @@ export default function History() {
         </div>
       )}
 
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => !open && setSelected(null)}
+      >
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-3xl sm:max-w-lg">
           {selected && (
             <>
@@ -127,8 +130,8 @@ export default function History() {
                 </DialogTitle>
               </DialogHeader>
               <p className="text-sm text-slate-500">
-                ≈ {selected.planned.estimatedDurationMinutes ?? 0} мин · Выполнено{" "}
-                {completionPercent(selected)}% подходов
+                ≈ {selected.planned.estimatedDurationMinutes ?? 0} мин ·
+                Выполнено {completionPercent(selected)}% подходов
               </p>
               <ul className="mt-4 space-y-3">
                 {selected.planned.exercises.map((item, i) => {

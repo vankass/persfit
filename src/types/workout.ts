@@ -2,7 +2,11 @@ import type { Exercise, MuscleGroup } from "./exercise";
 import type { UserProfile } from "./profile";
 
 /** @deprecated legacy history entries */
-export type LegacyWorkoutGoal = "strength" | "fat_loss" | "endurance" | "general";
+export type LegacyWorkoutGoal =
+  | "strength"
+  | "fat_loss"
+  | "endurance"
+  | "general";
 
 export type WorkoutIntensity = "low" | "medium" | "high";
 export type WorkoutFocus = "full_body" | "upper" | "lower" | "custom";

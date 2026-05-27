@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import type { UserProfile } from "@/types/profile";
 import type { WorkoutHistoryEntry } from "@/types/workout";
 import type { BodyMeasurement } from "@/types/measurement";
-import {
-  getBodyMeasurements,
-  getProfile,
-  getWorkoutHistory,
-  seedBodyMeasurementFromProfile,
-} from "@/lib/db";
+import { getBodyMeasurements, getProfile, getWorkoutHistory } from "@/lib/db"; // Убрали лишний saveBodyMeasurement
 
 export function useStatsData() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -18,16 +13,12 @@ export function useStatsData() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [userProfile, workouts] = await Promise.all([
+        // Загружаем ВСЕ три источника данных параллельно, это самый быстрый способ!
+        const [userProfile, workouts, bodyMeasurements] = await Promise.all([
           getProfile(),
           getWorkoutHistory(),
+          getBodyMeasurements(),
         ]);
-
-        if (userProfile) {
-          await seedBodyMeasurementFromProfile(userProfile);
-        }
-
-        const bodyMeasurements = await getBodyMeasurements();
 
         setProfile(userProfile ?? null);
         setHistory(workouts);

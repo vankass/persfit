@@ -1,12 +1,13 @@
 import { Loader } from "@/components/Loader";
 import { StatsSummaryRow } from "@/components/stats/StatsSummaryRow";
 import { AnthropometrySection } from "@/components/stats/AnthropometrySection";
-import { ActivityCalendar } from "@/components/stats/ActivityCalendar"; // Импортируем календарь
+import { ActivityCalendar } from "@/components/stats/ActivityCalendar";
 import { buildWorkoutSummary } from "@/lib/stats/workoutAggregates";
 import { useStatsData } from "@/hooks/useStatsData";
+import { WeightChart } from "@/components/stats/WeightChart";
 
 export default function Stats() {
-  const { profile, history, loading } = useStatsData();
+  const { profile, history, measurements, loading } = useStatsData();
 
   if (loading) {
     return <Loader />;
@@ -36,6 +37,8 @@ export default function Stats() {
           </p>
         </section>
       )}
+
+      <WeightChart measurements={measurements} />
 
       <ActivityCalendar history={history} />
     </div>

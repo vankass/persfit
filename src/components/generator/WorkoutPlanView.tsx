@@ -18,13 +18,14 @@ import type { GeneratedWorkout, PlannedExercise } from "@/types/workout";
 import { translate } from "@/lib/translations";
 import {
   getSessionLabel,
-  recalculateWorkoutDuration,
-} from "@/lib/workout/workoutGenerator";
+} from "@/lib/workout/labels";
+
 import {
   buildCandidatePoolForAlternatives,
   getAlternatives,
 } from "@/lib/exerciseAlternatives";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { recalculateWorkoutDuration } from "@/lib/workout/timeUtils";
 
 interface WorkoutPlanViewProps {
   workout: GeneratedWorkout;
