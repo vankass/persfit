@@ -166,9 +166,9 @@ export function GeneratorForm({
   const canGenerate = hasEquipment && hasValidFocus;
 
   return (
-    <Card className="mt-1 rounded-3xl border-slate-100 shadow-sm sm:mt-10">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-black text-slate-900 sm:text-2xl">
+    <Card className="mt-1 rounded-3xl border-slate-100 shadow-sm sm:mt-10 px-3 py-5">
+      <CardHeader>
+        <CardTitle className="text-2xl font-black text-slate-900 sm:text-3xl">
           Генератор тренировки
         </CardTitle>
         <p className="text-sm text-slate-500">
@@ -176,7 +176,7 @@ export function GeneratorForm({
         </p>
       </CardHeader>
 
-      <CardContent className="space-y-6 pb-6">
+      <CardContent className="space-y-6">
         <section className="space-y-3">
           <SectionTitle>Интенсивность</SectionTitle>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

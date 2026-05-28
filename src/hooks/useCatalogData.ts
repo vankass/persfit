@@ -4,7 +4,7 @@ import { loadExercises } from "@/lib/exercises";
 
 export function useCatalogData() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadExercises()
@@ -12,8 +12,8 @@ export function useCatalogData() {
       .catch((error) => {
         console.error("Ошибка загрузки каталога:", error);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => setLoading(false));
   }, []);
 
-  return { exercises, isLoading };
+  return { exercises, loading };
 }

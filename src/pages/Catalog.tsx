@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import type { Exercise } from "@/types/exercise";
 import { useCatalogData } from "@/hooks/useCatalogData";
 import { useCatalogFilters } from "@/hooks/useCatalogFilters";
 import { CatalogFiltersBar } from "@/components/catalog/CatalogFiltersBar";
 import { CatalogGrid } from "@/components/catalog/CatalogGrid";
 import { ExerciseDetailsDialog } from "@/components/catalog/ExerciseDetailsDialog";
+import { Loader } from "@/components/Loader";
 
 export default function Catalog() {
-  const { exercises, isLoading } = useCatalogData();
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const { exercises, loading } = useCatalogData();
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
+    null
+  );
   const {
     filters,
     updateFilter,
@@ -20,16 +22,12 @@ export default function Catalog() {
     loadMore,
   } = useCatalogFilters(exercises);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    );
+  if (loading) {
+    return <Loader />;
   }
 
   return (
-    <div className="min-h-0 pb-12">
+    <>
       <CatalogFiltersBar
         totalCount={filteredExercises.length}
         filters={filters}
@@ -46,6 +44,6 @@ export default function Catalog() {
         exercise={selectedExercise}
         onClose={() => setSelectedExercise(null)}
       />
-    </div>
+    </>
   );
 }

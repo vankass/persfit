@@ -3,20 +3,21 @@ import { translate } from "@/lib/translations";
 import type { Exercise } from "@/types/exercise";
 import { Button } from "@/components/ui/button";
 
-const LEVEL_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  beginner: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    dot: "bg-emerald-500",
-  },
-  intermediate: {
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    dot: "bg-amber-500",
-  },
-  expert: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
-  all: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
-};
+const LEVEL_STYLES: Record<string, { bg: string; text: string; dot: string }> =
+  {
+    beginner: {
+      bg: "bg-emerald-50",
+      text: "text-emerald-700",
+      dot: "bg-emerald-500",
+    },
+    intermediate: {
+      bg: "bg-amber-50",
+      text: "text-amber-700",
+      dot: "bg-amber-500",
+    },
+    expert: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
+    all: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  };
 
 interface CatalogGridProps {
   exercises: Exercise[];
@@ -32,7 +33,7 @@ export function CatalogGrid({
   onLoadMore,
 }: CatalogGridProps) {
   return (
-    <div className="mx-auto max-w-7xl px-1 py-6 sm:px-0 sm:py-8">
+    <div className="mx-auto max-w-7xl px-1 sm:px-0">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
         {exercises.map((ex) => (
           <div
@@ -114,7 +115,7 @@ export function CatalogGrid({
       </div>
 
       {hasMore ? (
-        <div className="mt-12 flex justify-center">
+        <div className="mt-5 flex justify-center">
           <Button
             type="button"
             variant="outline"

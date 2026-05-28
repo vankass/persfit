@@ -29,11 +29,11 @@ export function CatalogFiltersBar({
   onClearSearch,
 }: CatalogFiltersBarProps) {
   return (
-    <div className="relative z-20 border-b border-slate-100 bg-slate-50/95 pt-3 backdrop-blur-md">
-      <div className="px-1 pb-4 sm:px-0">
-        <h1 className="mb-4 flex flex-wrap items-center gap-2 text-xl font-black tracking-tight text-slate-900 sm:mb-5 sm:text-2xl">
+    <div className="relative z-20 border-b border-slate-100 bg-slate-50/95 backdrop-blur-md">
+      <div className="px-1 pb-1 sm:px-0">
+        <h1 className="mb-4 flex flex-wrap items-center gap-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
           Каталог
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
+          <span className="rounded-full bg-blue-100/40 px-3 py-1 text-sm font-medium text-blue-600">
             {totalCount}
           </span>
         </h1>

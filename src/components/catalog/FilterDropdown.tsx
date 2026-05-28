@@ -43,7 +43,7 @@ export function CatalogFilterDropdown<T extends string>({
             onChange(opt);
             setOpen(false);
           }}
-          className="flex w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left text-base font-semibold text-slate-600 active:bg-slate-100"
+          className="flex w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left text-base font-semibold text-slate-600 cursor-pointer select-none transition-colors hover:bg-slate-50 active:bg-slate-100"
         >
           <span className={currentValue === opt ? "text-blue-600" : ""}>
             {opt === "all" ? "Все" : translate(opt)}
@@ -57,15 +57,19 @@ export function CatalogFilterDropdown<T extends string>({
   const trigger = (
     <button
       type="button"
-      className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition-all ${
+      className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition-all duration-200 cursor-pointer select-none active:scale-98 ${
         currentValue !== "all"
-          ? "border-blue-200 bg-blue-50 text-blue-600"
-          : "border-slate-200 bg-white text-slate-500"
+          ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100/70 hover:border-blue-300"
+          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300"
       }`}
     >
       {icon}
       <span>{currentValue === "all" ? label : translate(currentValue)}</span>
-      <ChevronDown className="h-4 w-4 opacity-50" />
+      <ChevronDown
+        className={`h-4 w-4 opacity-50 transition-transform duration-200 ${
+          open ? "rotate-180" : ""
+        }`}
+      />
     </button>
   );
 
@@ -89,7 +93,7 @@ export function CatalogFilterDropdown<T extends string>({
             {label}
           </DrawerTitle>
           <DrawerDescription className="sr-only">
-            Выберите категорию из списка ниже
+            Выберите kategoriю из списка ниже
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex-1 overflow-y-auto px-2 no-scrollbar">
