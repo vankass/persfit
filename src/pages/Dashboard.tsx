@@ -12,18 +12,26 @@ import {
   Timer,
   Target,
   LucideActivity,
+  History as HistoryIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Loader } from "@/components/Loader";
 import { useProfile } from "@/hooks/useProfile";
 import { useDashboardSummary } from "@/hooks/useDashboardSummary";
 import { getSessionLabel } from "@/lib/workout/labels";
+import { formatDate, formatMinutes } from "@/lib/workout/timeUtils";
+import { completionPercent } from "@/lib/workout/completion";
+import type { WorkoutHistoryEntry } from "@/types/workout";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useProfile();
   const { history, weekCount, lastWorkout, totalMinutes, loading } =
     useDashboardSummary();
+
+  const handleRepeatWorkout = (entry: WorkoutHistoryEntry) => {
+    navigate("/generator", { state: { repeatWorkout: entry.planned } });
+  };
 
   if (loading) {
     return <Loader />;
@@ -120,18 +128,47 @@ export default function Dashboard() {
           </div>
 
           {lastWorkout ? (
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 sm:p-4 text-left">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                Последняя тренировка
-              </p>
-              <p className="mt-1 font-bold text-slate-900">
-                {getSessionLabel(lastWorkout.planned.params)}
-              </p>
-              <p className="text-sm text-slate-500">
-                {new Date(lastWorkout.finishedAt).toLocaleDateString("ru-RU")} ·{" "}
-                {lastWorkout.planned.exercises.length} упражнений ·{" "}
-                {Math.floor(lastWorkout.totalDurationSeconds / 60)} мин
-              </p>
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => navigate("/history")}
+                className="h-auto min-w-0 flex-1 items-center justify-start gap-3 p-0 text-left hover:bg-transparent sm:gap-4"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 sm:h-12 sm:w-12">
+                  <HistoryIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-slate-900 whitespace-normal sm:text-base">
+                    {formatDate(lastWorkout.finishedAt)}
+                  </p>
+                  <p className="text-xs text-slate-500 whitespace-normal sm:text-sm mt-0.5 sm:mt-0">
+                    {getSessionLabel(lastWorkout.planned.params)}
+                  </p>
+                  <p className="text-xs text-slate-500 whitespace-normal sm:text-sm mt-0.5 sm:mt-0">
+                    {lastWorkout.planned.exercises.length} упражнений ·{" "}
+                    {formatMinutes(lastWorkout.totalDurationSeconds)}
+                  </p>
+                </div>
+              </Button>
+
+              <div className="flex items-center justify-between sm:justify-end gap-1 border-t border-slate-50 pt-2 sm:border-t-0 sm:pt-0 sm:gap-0.5">
+                <p className="text-base font-black text-emerald-600 sm:text-lg ml-3 sm:mr-2 cursor-default">
+                  {completionPercent(lastWorkout)}%
+                </p>
+                <div className="flex items-center gap-1 sm:gap-0.5">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Повторить тренировку"
+                    onClick={() => handleRepeatWorkout(lastWorkout)}
+                    className="h-10 w-10 shrink-0 rounded-xl text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors sm:h-11 sm:w-11"
+                  >
+                    <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="py-6 sm:py-8 md:py-10 text-center">

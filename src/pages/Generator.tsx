@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import type {
   CompletedSet,
   GeneratedWorkout,
@@ -22,16 +22,38 @@ import { saveWorkoutHistory } from "@/lib/db";
 
 export default function Generator() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const { profile, exercises, loading } = useGeneratorData();
-  const [phase, setPhase] = useState<GeneratorPhase>("wizard");
+
+  const routerState = location.state as {
+    repeatWorkout?: GeneratedWorkout;
+  } | null;
+  const hasRepeatWorkout = !!routerState?.repeatWorkout;
+
+  const [phase, setPhase] = useState<GeneratorPhase>(
+    hasRepeatWorkout ? "plan" : "wizard"
+  );
+
   const [params, setParams] = useState<GeneratorParams>(
     DEFAULT_GENERATOR_PARAMS
   );
-  const [workout, setWorkout] = useState<GeneratedWorkout | null>(null);
+
+  const [workout, setWorkout] = useState<GeneratedWorkout | null>(
+    routerState?.repeatWorkout || null
+  );
+
   const [sessionProgress, setSessionProgress] =
     useState<SessionProgress | null>(null);
+
   const [finishedAt, setFinishedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (hasRepeatWorkout) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [hasRepeatWorkout, navigate, location.pathname]);
 
   if (loading) {
     return <Loader />;
@@ -46,7 +68,7 @@ export default function Generator() {
       </div>
     );
   }
-  
+
   const handleGenerate = () => {
     if (!profile || exercises.length === 0) return;
     setWorkout(generateWorkout(exercises, profile, params));
@@ -115,7 +137,7 @@ export default function Generator() {
             allExercises={exercises}
             onWorkoutChange={setWorkout}
             onStart={handleStartWorkout}
-            onBack={() => setPhase("wizard")} 
+            onBack={() => setPhase("wizard")}
           />
         ) : null;
       case "active":

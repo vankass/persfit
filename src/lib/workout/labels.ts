@@ -6,4 +6,4 @@ export function getIntensityLabel(intensity: WorkoutIntensity): string {
 }
 
 export const getSessionLabel = (params: GeneratorParams): string =>
-  `Силовая · ${getIntensityLabel(params.intensity)}`;
+  `${getIntensityLabel(params.intensity)} интенсивность`;
