@@ -182,7 +182,7 @@ export default function Profile() {
                 </label>
                 {isEditing ? (
                   <Input
-                    placeholder="Как тебя зовут?"
+                    placeholder="2-15 символов"
                     value={editedProfile.name}
                     maxLength={15}
                     onChange={(e) => handleInputChange("name", e.target.value)}
@@ -228,7 +228,7 @@ export default function Profile() {
                 {isEditing ? (
                   <Input
                     type="number"
-                    placeholder="Твой возраст"
+                    placeholder="14-100 лет"
                     value={editedProfile.age || ""}
                     onChange={(e) => handleInputChange("age", e.target.value)}
                     className={getFieldClass("age")}
@@ -256,7 +256,7 @@ export default function Profile() {
                 {isEditing ? (
                   <Input
                     type="number"
-                    placeholder="Укажи вес"
+                    placeholder="30-300 кг"
                     value={editedProfile.weight || ""}
                     onChange={(e) =>
                       handleInputChange("weight", e.target.value)
@@ -277,7 +277,7 @@ export default function Profile() {
                 {isEditing ? (
                   <Input
                     type="number"
-                    placeholder="Укажи рост"
+                    placeholder="100-250 см"
                     value={editedProfile.height || ""}
                     onChange={(e) =>
                       handleInputChange("height", e.target.value)

@@ -128,7 +128,7 @@ export default function Dashboard() {
           </div>
 
           {lastWorkout ? (
-            <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:gap-4 sm:p-4">
               <Button
                 type="button"
                 variant="ghost"

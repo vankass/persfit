@@ -21,16 +21,16 @@ export function AnthropometrySection({ profile }: { profile: UserProfile }) {
   const bmi = calcBmi(profile.weight, profile.height);
   const category = getBmiCategory(bmi);
   const range = getHealthyWeightRange(profile.height);
-
+  
   const [activity, setActivity] = useState<ActivityLevel>(() => {
     const saved = localStorage.getItem("persfit_user_activity");
     return (saved as ActivityLevel) || "light";
   });
-
+  
   useEffect(() => {
     localStorage.setItem("persfit_user_activity", activity);
   }, [activity]);
-
+  
   const calories = calcDailyCalories(profile, activity);
 
   return (
