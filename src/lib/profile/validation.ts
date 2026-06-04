@@ -19,7 +19,7 @@ const PROFILE_VALIDATION_RULES: Record<
     return normalized.length < 2 || normalized.length > 15;
   },
   gender: (value) => !value,
-  age: (value) => !value || Number(value) < 14 || Number(value) > 100,
+  age: (value) => !value || Number(value) < 16 || Number(value) > 110,
   weight: (value) => !value || Number(value) < 30 || Number(value) > 300,
   height: (value) => !value || Number(value) < 100 || Number(value) > 250,
   level: (value) => !value,
@@ -33,6 +33,17 @@ export function getInvalidProfileFields(
   );
 }
 
-export function getInvalidUserProfileFields(profile: UserProfile): ProfileField[] {
+export function getInvalidUserProfileFields(
+  profile: UserProfile
+): ProfileField[] {
   return getInvalidProfileFields(profile);
 }
+
+export const ERROR_MESSAGES: Record<ProfileField, string> = {
+  name: "От 2 до 15 символов",
+  gender: "Выберите пол",
+  age: "Возраст: 16–110 лет",
+  weight: "Вес: 30–300 кг",
+  height: "Рост: 100–250 см",
+  level: "Выберите уровень подготовки",
+};
