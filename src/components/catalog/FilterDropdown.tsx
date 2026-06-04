@@ -93,7 +93,7 @@ export function CatalogFilterDropdown<T extends string>({
             {label}
           </DrawerTitle>
           <DrawerDescription className="sr-only">
-            Выберите kategoriю из списка ниже
+            Выберите категорию из списка ниже
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex-1 overflow-y-auto px-2 no-scrollbar">

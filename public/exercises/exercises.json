@@ -1826,7 +1826,7 @@
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
-    "equipment": "body only",
+    "equipment": "barbell",
     "primaryMuscles": ["triceps"],
     "secondaryMuscles": [],
     "instructions": [
@@ -3205,7 +3205,7 @@
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["lats"],
     "secondaryMuscles": ["biceps", "forearms", "middle back"],
     "instructions": [
@@ -3592,7 +3592,7 @@
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "dumbbell",
     "primaryMuscles": ["triceps"],
     "secondaryMuscles": ["abdominals", "chest", "shoulders"],
     "instructions": [
@@ -4265,7 +4265,7 @@
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
-    "equipment": "other",
+    "equipment": "parallel bars",
     "primaryMuscles": ["chest"],
     "secondaryMuscles": ["shoulders", "triceps"],
     "instructions": [
@@ -4283,7 +4283,7 @@
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "parallel bars",
     "primaryMuscles": ["triceps"],
     "secondaryMuscles": ["chest", "shoulders"],
     "instructions": [
@@ -6170,7 +6170,7 @@
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["abdominals"],
     "secondaryMuscles": ["biceps", "lats"],
     "instructions": [
@@ -6452,7 +6452,7 @@
     "force": "pull",
     "level": "expert",
     "mechanic": "isolation",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["abdominals"],
     "secondaryMuscles": [],
     "instructions": [
@@ -6470,7 +6470,7 @@
     "force": "pull",
     "level": "expert",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["abdominals"],
     "secondaryMuscles": [],
     "instructions": [
@@ -7834,7 +7834,7 @@
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
-    "equipment": "other",
+    "equipment": "parallel bars",
     "primaryMuscles": ["abdominals"],
     "secondaryMuscles": [],
     "instructions": [
@@ -9522,7 +9522,7 @@
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "machine",
     "primaryMuscles": ["hamstrings"],
     "secondaryMuscles": ["calves", "glutes", "lower back"],
     "instructions": [
@@ -10708,7 +10708,7 @@
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
-    "equipment": "other",
+    "equipment": "parallel bars",
     "primaryMuscles": ["triceps"],
     "secondaryMuscles": ["chest", "shoulders"],
     "instructions": [
@@ -11292,7 +11292,7 @@
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["lats"],
     "secondaryMuscles": ["biceps", "middle back"],
     "instructions": [
@@ -17026,7 +17026,7 @@
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["lats"],
     "secondaryMuscles": ["biceps", "middle back", "shoulders"],
     "instructions": [
@@ -17359,7 +17359,7 @@
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["lats"],
     "secondaryMuscles": ["biceps", "middle back", "shoulders"],
     "instructions": [
@@ -17439,7 +17439,7 @@
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
-    "equipment": "body only",
+    "equipment": "pull up bar",
     "primaryMuscles": ["abdominals"],
     "secondaryMuscles": [],
     "instructions": [
@@ -17648,5 +17648,23 @@
     "category": "strength",
     "images": ["Pike_Pushups/0.jpg", "Pike_Pushups/1.jpg"],
     "id": "Pike_Pushups"
+  },
+  {
+    "name": "Тяга на полу лежа",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "body only",
+    "primaryMuscles": ["lats"],
+    "secondaryMuscles": ["middle back", "traps", "shoulders"],
+    "instructions": [
+      "Лягте на живот, вытянув руки вперед, ладони и предплечья прижаты к полу.",
+      "Напрягите мышцы пресса и, мощно сводя лопатки, потяните локти вниз к корпусу.",
+      "За счет давления предплечий в пол слегка приподнимите и продвиньте верхнюю часть корпуса вперед, имитируя подтягивание.",
+      "В пиковой точке максимально сожмите мышцы спины, затем плавно вернитесь в исходное положение."
+    ],
+    "category": "strength",
+    "images": ["Floor_Pulls/0.jpg", "Floor_Pulls/1.jpg"],
+    "id": "Floor_Pulls"
   }
 ]

@@ -217,7 +217,7 @@ export function GeneratorForm({
           ) : (
             <div className="space-y-2">
               <p className="text-sm text-slate-500">
-                Что есть дома (свой вес уже учтён)
+                Что есть дома
               </p>
               <div className="flex flex-wrap gap-2">
                 {HOME_EXTRA_EQUIPMENT.map((item) => (

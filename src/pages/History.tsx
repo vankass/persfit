@@ -99,6 +99,7 @@ export default function History() {
                     size="icon"
                     variant="ghost"
                     aria-label="Повторить тренировку"
+                    title="Повторить тренировку"
                     onClick={() => handleRepeatWorkout(entry)}
                     className="h-10 w-10 shrink-0 rounded-xl text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors sm:h-11 sm:w-11"
                   >
@@ -110,6 +111,7 @@ export default function History() {
                     size="icon"
                     variant="ghost"
                     aria-label="Удалить тренировку"
+                    title="Удалить тренировку"
                     disabled={deletingId === entry.id}
                     onClick={() => handleDelete(entry.id)}
                     className="h-10 w-10 shrink-0 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors sm:h-11 sm:w-11"

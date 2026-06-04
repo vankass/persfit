@@ -5,8 +5,10 @@ export const HOME_BASE_EQUIPMENT = ["body only"] as const;
 export const HOME_EXTRA_EQUIPMENT = [
   "dumbbell",
   "kettlebells",
-  "bands",
+  "pull up bar",
+  "parallel bars",
   "barbell",
+  "bands",
   "medicine ball",
   "exercise ball",
 ] as const;
@@ -26,7 +28,7 @@ export function buildHomeEquipment(extras: string[]): string[] {
 
 export function getHomeExtrasFromEquipment(equipment: string[]): string[] {
   return equipment.filter((e) =>
-    (HOME_EXTRA_EQUIPMENT as readonly string[]).includes(e),
+    (HOME_EXTRA_EQUIPMENT as readonly string[]).includes(e)
   );
 }
 

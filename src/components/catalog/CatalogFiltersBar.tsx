@@ -42,7 +42,7 @@ export function CatalogFiltersBar({
           <div className="group relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-500 sm:left-3.5" />
             <Input
-              type="search"
+              type="text"
               placeholder="Поиск упражнения..."
               value={filters.searchQuery}
               onChange={(e) => onFilterChange("searchQuery", e.target.value)}
@@ -53,9 +53,10 @@ export function CatalogFiltersBar({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-1 top-0 bottom-0 m-auto flex items-center h-9 w-9 hover:bg-white"
                 onClick={onClearSearch}
                 aria-label="Очистить поиск"
+                title="Очистить поиск"
               >
                 <XCircle className="h-5 w-5" />
               </Button>
@@ -103,6 +104,8 @@ export function CatalogFiltersBar({
                     "medicine ball",
                     "exercise ball",
                     "e-z curl bar",
+                    "pull up bar",
+                    "parallel bars",
                     "foam roll",
                     "other",
                   ]}
