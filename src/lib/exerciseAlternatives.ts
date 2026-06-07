@@ -35,6 +35,7 @@ export function getAlternatives(
     (ex) =>
       ex.id !== exercise.id &&
       !excludeIds.has(ex.id) &&
+      ex.category === exercise.category &&
       sharesPrimaryMuscle(ex, exercise)
   );
 
