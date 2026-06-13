@@ -164,7 +164,7 @@ export default function Generator() {
     }
   };
 
-  return <div className="mx-auto max-w-4xl space-y-3">{renderPhase()}</div>;
+  return <div className="mx-auto max-w-5xl space-y-3">{renderPhase()}</div>;
 }
 
 function initCompletedSets(workout: GeneratedWorkout): CompletedSet[][] {

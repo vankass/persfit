@@ -175,7 +175,7 @@ export function WorkoutPlanView({
         open={replaceIndex !== null}
         onOpenChange={(open) => !open && setReplaceIndex(null)}
       >
-        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-3xl sm:max-w-lg">
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-lg sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Заменить упражнение</DialogTitle>
             <DialogDescription>

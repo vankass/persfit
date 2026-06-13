@@ -44,7 +44,7 @@ export default function History() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 px-4 pb-12 sm:px-0">
+    <div className="mx-auto max-w-5xl space-y-4 px-4 pb-12 sm:px-0">
       <h1 className="text-xl font-black text-slate-900 sm:text-3xl">
         История тренировок
       </h1>

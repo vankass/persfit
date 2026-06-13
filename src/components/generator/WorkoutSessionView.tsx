@@ -79,7 +79,7 @@ export function WorkoutSessionView({
     return (
       <WarmupCooldownBlock
         config={WARMUP_VIDEO}
-        continueLabel="Начать тренировку"
+        continueLabel="Продолжить"
         onContinue={() =>
           onProgressChange({
             ...progress,
@@ -147,7 +147,7 @@ export function WorkoutSessionView({
   };
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-4">
       <SessionProgressBar
         exerciseIndex={exerciseIndex}
         total={total}

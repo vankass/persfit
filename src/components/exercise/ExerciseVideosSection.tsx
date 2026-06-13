@@ -52,7 +52,9 @@ export function ExerciseVideosSection({
           {loading ? (
             <>
               <Loader2
-                className={`${isCatalog ? "mr-1 h-3 w-3" : "mr-2 h-4 w-4"} animate-spin`}
+                className={`${
+                  isCatalog ? "mr-1 h-3 w-3" : "mr-2 h-4 w-4"
+                } animate-spin`}
               />
               {isCatalog ? "Загрузка..." : null}
             </>
@@ -63,7 +65,7 @@ export function ExerciseVideosSection({
                 ? showVideos && videos.length > 0
                   ? "Обновить"
                   : "Найти видео"
-                : "Видео техники"}
+                : "Найти видео"}
             </>
           )}
         </Button>
@@ -89,7 +91,9 @@ export function ExerciseVideosSection({
 
       {showVideos && !loading && videos.length > 0 ? (
         <div
-          className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${isCatalog ? "" : "mt-3"}`}
+          className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${
+            isCatalog ? "" : "mt-3"
+          }`}
         >
           {videos.map((video) => (
             <a
@@ -129,7 +133,9 @@ export function ExerciseVideosSection({
       ) : null}
 
       {showVideos && !loading && !error && videos.length === 0 && isCatalog ? (
-        <p className="py-4 text-center text-sm text-slate-500">Видео не найдены</p>
+        <p className="py-4 text-center text-sm text-slate-500">
+          Видео не найдены
+        </p>
       ) : null}
     </div>
   );

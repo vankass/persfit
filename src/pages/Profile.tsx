@@ -95,7 +95,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:py-10 relative">
+    <div className="max-w-5xl mx-auto px-4 md:py-10 relative">
       {isSaving && <Loader />}
       <div className="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-5 mb-6">
         <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
