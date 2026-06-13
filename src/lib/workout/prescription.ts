@@ -62,8 +62,8 @@ export function buildPrescription(
   }
 
   const strengthPresets: Record<WorkoutIntensity, WorkoutSetPrescription> = {
-    low: { sets: 3, reps: "12-15", restSeconds: 60 },
-    medium: { sets: 3, reps: "8-12", restSeconds: 90 },
+    low: { sets: 3, reps: "10-15", restSeconds: 60 },
+    medium: { sets: 3, reps: "6-10", restSeconds: 90 },
     high: { sets: 4, reps: "4-6", restSeconds: 120 },
   };
 
