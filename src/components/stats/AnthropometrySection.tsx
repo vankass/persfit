@@ -38,7 +38,7 @@ export function AnthropometrySection({ profile }: { profile: UserProfile }) {
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between md:mb-6">
         <div>
           <h2 className="text-lg font-black text-slate-900 sm:text-xl">
-            Антропометрия
+            Анализ тела
           </h2>
           <p className="text-xs text-slate-500 sm:text-sm">
             Данные из профиля ·{" "}

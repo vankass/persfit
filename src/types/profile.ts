@@ -32,3 +32,10 @@ export function getAllowedExerciseLevels(
       return ["beginner"];
   }
 }
+
+export interface BodyMeasurement {
+  id: string;
+  recordedAt: string;
+  weight: number;
+  height: number;
+}

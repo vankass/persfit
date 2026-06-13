@@ -1,7 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { UserProfile } from "@/types/profile";
+import type { UserProfile, BodyMeasurement } from "@/types/profile";
 import type { WorkoutHistoryEntry } from "@/types/workout";
-import type { BodyMeasurement } from "@/types/measurement";
 
 const DB_NAME = "persfit";
 const PROFILE_KEY = "current_user";
