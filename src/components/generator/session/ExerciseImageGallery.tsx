@@ -11,28 +11,34 @@ export function ExerciseImageGallery({ images }: ExerciseImageGalleryProps) {
 
   if (images.length === 1) {
     return (
-      <img
-        src={`/exercises/images/${images[0]}`}
-        alt=""
-        className="mb-5 h-40 w-full rounded-2xl bg-slate-50 object-cover sm:h-48"
-      />
+      <div className="mb-5 flex h-40 w-full items-center justify-center rounded-2xl bg-slate-50 p-2 sm:h-64">
+        <img
+          src={`/exercises/images/${images[0]}`}
+          alt=""
+          className="h-full w-auto rounded-xl object-contain"
+        />
+      </div>
     );
   }
 
   return (
-    <div className="sm:flex sm:gap-5">
+    <div className="sm:grid sm:grid-cols-2 sm:gap-5">
+      {/* Мобильный слайдер */}
       <div
-        className="relative mb-5 h-40 w-full cursor-pointer overflow-hidden rounded-2xl sm:hidden"
+        className="relative mb-5 h-48 w-full cursor-pointer overflow-hidden rounded-2xl bg-slate-50 sm:hidden"
         onClick={() =>
           setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
         }
       >
-        <img
-          src={`/exercises/images/${images[currentIndex]}`}
-          alt=""
-          className="h-full w-full bg-slate-50 object-cover"
-        />
-        <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
+        <div className="flex h-full w-full items-center justify-center p-2">
+          <img
+            src={`/exercises/images/${images[currentIndex]}`}
+            alt=""
+            className="h-full w-auto object-contain"
+          />
+        </div>
+        
+        <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/30 p-1.5">
           {images.map((_, idx) => (
             <div
               key={idx}
@@ -45,12 +51,13 @@ export function ExerciseImageGallery({ images }: ExerciseImageGalleryProps) {
       </div>
 
       {images.map((image) => (
-        <img
-          key={image}
-          src={`/exercises/images/${image}`}
-          alt=""
-          className="mb-5 hidden h-55 w-full flex-1 rounded-2xl bg-slate-50 object-cover sm:block"
-        />
+        <div key={image} className="mb-5 hidden h-64 w-full items-center justify-center rounded-2xl bg-slate-100 p-3 sm:flex">
+          <img
+            src={`/exercises/images/${image}`}
+            alt=""
+            className="h-full w-auto rounded-xl object-contain shadow-sm"
+          />
+        </div>
       ))}
     </div>
   );
