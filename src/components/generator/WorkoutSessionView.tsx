@@ -174,7 +174,7 @@ export function WorkoutSessionView({
           loading={videosLoading}
           error={videosError}
           showVideos={showVideos}
-          onLoad={() => loadVideos(current.exercise.id)}
+          onLoad={() => loadVideos(current.exercise.name)}
           variant="session"
         />
       </div>

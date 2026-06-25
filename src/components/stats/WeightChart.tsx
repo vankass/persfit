@@ -2,7 +2,7 @@
 
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, type ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
-import type { BodyMeasurement } from "@/types/measurement";
+import type { BodyMeasurement } from "@/types/profile";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 

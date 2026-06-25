@@ -29,6 +29,7 @@ export function generateWorkout(
   params: GeneratorParams
 ): GeneratedWorkout {
   const pool = filterExercises(allExercises, profile, params);
+
   const targetMuscles = getTargetMuscles(params);
   const { maxExercises, muscleMaxCounts } = calculateTargetLimits(
     params,
@@ -51,6 +52,7 @@ export function generateWorkout(
       params,
       profile.level
     );
+    
     const totalIfAdded = sumPlannedSeconds(trialPlanned, params.intensity);
 
     if (picked.length > 0 && totalIfAdded > BUDGET_MAX_SECONDS) break;
