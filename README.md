@@ -1,43 +1,34 @@
-# Persfit
+# 🏋️ Persfit
 
-Persfit is a modern fitness web application designed to help users build personalized workout plans, explore an exercise catalog, and track their progress over time. The app combines onboarding, workout generation, training history, and performance insights in a single experience.
+🇷🇺 [Русская версия](README.ru.md)
 
-## Features
+**Persfit** is a modern web application for personalized workouts. It helps users create individual workout plans, explore an exercise catalog, and track their progress.
 
-- Personalized onboarding and profile setup
-- Workout generator with adjustable intensity and focus
-- Exercise catalog with detailed information and filtering
-- Dashboard for recent activity and workout summaries
-- Progress tracking with stats and workout history
-- Local persistence for profiles, workouts, and measurements
+The application combines profile setup, workout generation, workout history, and progress tracking in a single experience.
 
-## Tech Stack
+## 🚀 Features
 
-- React 19
-- TypeScript
-- Vite
-- Tailwind CSS
-- React Router
-- Chart.js
-- IndexedDB
+* Personalized profile setup
+* Workout generator with adjustable intensity and equipment selection
+* Exercise catalog with detailed information and filtering
+* Dashboard with recent activity
+* Progress, statistics, and workout history tracking
+* Local storage for profiles and workouts
 
-## Getting Started
+## 🛠 Tech Stack
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
-3. Open the app in your browser at `http://localhost:5173`
+* **React 19**
+* **TypeScript**
+* **Vite**
+* **Tailwind CSS**
+* **React Router**
+* **Chart.js**
+* **IndexedDB**
 
-## Available Scripts
+## 🌐 Demo
 
-- `npm run dev` — start the development server
-- `npm run build` — build the project for production
-- `npm run lint` — run ESLint checks
-- `npm run preview` — preview the production build
+The project is available online via Vercel:
 
-> This project was developed with AI-assisted support and refined into a more polished fitness experience.
+https://persfit.vercel.app
+
+> This project was developed with AI-assisted support.
